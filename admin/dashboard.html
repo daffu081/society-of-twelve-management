@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Admin Dashboard | Society of Twelve</title>
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f7fa;
+      color: #17202a;
+    }
+
+    header {
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 18px 5%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo {
+      width: 45px;
+      height: 45px;
+      border-radius: 10px;
+      background: #111827;
+      color: white;
+      display: grid;
+      place-items: center;
+      font-weight: bold;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .role {
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    .logout {
+      border: 0;
+      padding: 10px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    main {
+      padding: 35px 5%;
+    }
+
+    .welcome {
+      margin-bottom: 30px;
+    }
+
+    .welcome h2 {
+      margin-bottom: 5px;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns:
+        repeat(auto-fit, minmax(210px, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      background: white;
+      padding: 25px;
+      border-radius: 16px;
+      border: 1px solid #e5e7eb;
+      min-height: 130px;
+    }
+
+    .card h3 {
+      margin-top: 0;
+    }
+
+    .card p {
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 30px;
+      color: #64748b;
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+<header>
+
+  <div class="brand">
+
+    <div class="logo">
+      SOT
+    </div>
+
+    <div>
+
+      <h1>Society of Twelve</h1>
+
+      <div
+        class="role"
+        id="adminRole"
+      >
+        Loading...
+      </div>
+
+    </div>
+
+  </div>
+
+  <button
+    class="logout"
+    onclick="logoutAdmin()"
+  >
+    Logout
+  </button>
+
+</header>
+
+
+<main>
+
+  <div class="welcome">
+
+    <h2>
+      Welcome, <span id="adminName"></span> 👋
+    </h2>
+
+    <p>
+      Society of Twelve Administration Panel
+    </p>
+
+  </div>
+
+
+  <div class="dashboard-grid">
+
+    <div class="card">
+      <h3>👥 Members</h3>
+      <p>Manage members and profiles.</p>
+    </div>
+
+    <div class="card">
+      <h3>💳 Payments</h3>
+      <p>Manage payments and receipts.</p>
+    </div>
+
+    <div class="card">
+      <h3>💰 Finance</h3>
+      <p>Income and expense management.</p>
+    </div>
+
+    <div class="card">
+      <h3>📢 Notices</h3>
+      <p>Create and manage notices.</p>
+    </div>
+
+    <div class="card">
+      <h3>📁 Projects</h3>
+      <p>Manage running and previous projects.</p>
+    </div>
+
+    <div class="card">
+      <h3>🕌 Mahfil</h3>
+      <p>Manage Mahfil activities.</p>
+    </div>
+
+    <div class="card">
+      <h3>📱 SMS</h3>
+      <p>SMS templates and SMS history.</p>
+    </div>
+
+    <div class="card">
+      <h3>🎂 Birthday</h3>
+      <p>Birthday automation.</p>
+    </div>
+
+    <div class="card">
+      <h3>👨‍💼 Executive Admins</h3>
+      <p>Manage administrators and permissions.</p>
+    </div>
+
+    <div class="card">
+      <h3>📜 Rules & Regulations</h3>
+      <p>Manage organizational rules.</p>
+    </div>
+
+    <div class="card">
+      <h3>🏆 Awards & Achievements</h3>
+      <p>Manage achievements.</p>
+    </div>
+
+    <div class="card">
+      <h3>⚙️ Settings</h3>
+      <p>System configuration.</p>
+    </div>
+
+  </div>
+
+</main>
+
+
+<footer>
+
+  <div>
+    Developed By Sabbir Ahmed Sakib
+  </div>
+
+  <div>
+    © <span id="year"></span>
+    Society of Twelve — All Rights Reserved.
+  </div>
+
+</footer>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script src="../config.js"></script>
+
+<script src="admin.js"></script>
+
+
+<script>
+
+document.getElementById("year").textContent =
+  new Date().getFullYear();
+
+
+(async () => {
+
+  const result =
+    await checkAdminAccess();
+
+  if (!result) return;
+
+  const { admin } = result;
+
+  document.getElementById("adminName")
+    .textContent = admin.name;
+
+  document.getElementById("adminRole")
+    .textContent =
+      admin.role === "super_admin"
+        ? "Super Admin"
+        : "Executive Admin";
+
+})();
+
+</script>
+
+</body>
+
+</html>

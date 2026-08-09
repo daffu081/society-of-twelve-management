@@ -1,0 +1,26 @@
+create extension if not exists pgcrypto;
+create table if not exists public.members (
+ id uuid primary key default gen_random_uuid(), member_id text unique not null, name text not null,
+ father_name text, house_name text, village text, mobile text not null, whatsapp text, email text,
+ dob date, profession text, fee_category text, monthly_fee numeric(12,2), join_date date,
+ active boolean default true, photo_url text, education jsonb, skills text[], interests text[],
+ nid_number text, birth_registration_id text, passport_number text, short_bio text,
+ show_on_public_directory boolean default false, created_at timestamptz default now(), updated_at timestamptz default now()
+);
+create table if not exists public.payments (
+ id uuid primary key default gen_random_uuid(), receipt_no text unique not null, member_id uuid references public.members(id),
+ amount numeric(12,2) not null, purpose text not null, payment_method text not null, payment_date timestamptz default now(), notes text, created_by uuid, created_at timestamptz default now()
+);
+create table if not exists public.notices (
+ id uuid primary key default gen_random_uuid(), ref_no text unique not null, title text not null, body text not null,
+ published boolean default false, running boolean default false, published_at timestamptz, created_at timestamptz default now(), updated_at timestamptz default now()
+);
+create table if not exists public.projects (id uuid primary key default gen_random_uuid(),title text not null,description text,status text default 'running',cover_url text,created_at timestamptz default now(),updated_at timestamptz default now());
+create table if not exists public.mahfils (id uuid primary key default gen_random_uuid(),title text not null,description text,status text default 'running',cover_url text,created_at timestamptz default now(),updated_at timestamptz default now());
+create table if not exists public.admins (id uuid primary key default gen_random_uuid(),auth_user_id uuid unique,name text not null,email text,role text default 'executive_admin',active boolean default true,permissions jsonb default '{}'::jsonb,created_at timestamptz default now());
+create table if not exists public.sms_templates (id uuid primary key default gen_random_uuid(),template_key text unique not null,template_name text not null,body text not null,active boolean default true,updated_at timestamptz default now());
+create table if not exists public.sms_logs (id uuid primary key default gen_random_uuid(),member_id uuid references public.members(id),template_key text,message_body text not null,status text default 'pending',provider_message_id text,sent_by uuid,sent_at timestamptz,created_at timestamptz default now());
+create table if not exists public.birthday_logs (id uuid primary key default gen_random_uuid(),member_id uuid references public.members(id) not null,birthday_year integer not null,sms_log_id uuid references public.sms_logs(id),created_at timestamptz default now(),unique(member_id,birthday_year));
+create table if not exists public.income (id uuid primary key default gen_random_uuid(),source text not null,amount numeric(12,2) not null,income_date date default current_date,payment_id uuid references public.payments(id),notes text,created_at timestamptz default now());
+create table if not exists public.expenses (id uuid primary key default gen_random_uuid(),category text not null,amount numeric(12,2) not null,expense_date date default current_date,notes text,created_at timestamptz default now());
+create table if not exists public.bin (id uuid primary key default gen_random_uuid(),entity_type text not null,entity_id uuid not null,deleted_by uuid,deleted_at timestamptz default now(),expires_at timestamptz default (now()+interval '30 days'),snapshot jsonb not null);
