@@ -1,0 +1,13 @@
+type: directory-index
+title: "01-source — raw product intent"
+directory: 01-source
+description: >-
+  The unfiltered product intent before it's distilled into ADRs and feature specs.
+  Rarely loaded directly — the source of truth for "why does this product exist".
+files:
+  - file: vision.md
+    purpose: The one-paragraph reason this product exists
+  - file: requirements.md
+    purpose: What it must do (functional + non-functional)
+  - file: constraints.md
+    purpose: "Hard limits: platform, budget, legal, time"

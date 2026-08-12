@@ -1,0 +1,13 @@
+type: directory-index
+title: "03-business — business-layer framing"
+directory: 03-business
+description: >-
+  The product intent from 01-source/ re-expressed in business terms that feed feature
+  business-context.md files. Rarely loaded directly.
+files:
+  - file: vision.md
+    purpose: Business vision
+  - file: requirements.md
+    purpose: Business requirements
+  - file: constraints.md
+    purpose: Business constraints

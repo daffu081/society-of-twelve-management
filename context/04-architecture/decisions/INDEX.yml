@@ -1,0 +1,13 @@
+# Machine-readable ADR registry — the SINGLE source of truth for ADR metadata.
+# Numbered, append-only. Load ONE ADR by number — never read the whole directory.
+# The question->ADR routing index lives in architecture-map.md.
+adrs:
+  ADR-001:
+    title: "Authorize admins via the admins table, not the auth session alone"
+    status: implemented
+  ADR-002:
+    title: "Store money as numeric(12,2) in Postgres"
+    status: implemented
+  ADR-003:
+    title: "Soft-delete via a bin table with 30-day expiry"
+    status: implemented

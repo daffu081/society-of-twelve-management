@@ -1,0 +1,7 @@
+type: directory-index
+title: "07-design-guideline — design system"
+directory: 07-design-guideline
+description: Load on any UI / theme work.
+files:
+  - file: design-system.md
+    purpose: Colours, typography, spacing, components

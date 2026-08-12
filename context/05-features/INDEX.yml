@@ -1,0 +1,59 @@
+# Machine-readable feature registry — the SINGLE source of truth for feature metadata.
+# (There is no per-feature index.md; each feature folder is just its 3 content files.)
+# Spec-health checks ac_count against the `### AC` headings in each business-context.md.
+features:
+  admin-access:
+    status: in_progress
+    ac_count: 4
+    contract_version: 1
+    depends_on: []
+  public-site:
+    status: in_progress
+    ac_count: 2
+    contract_version: 1
+    depends_on: [members, notices, projects, mahfil]
+  members:
+    status: planned
+    ac_count: 3
+    contract_version: 1
+    depends_on: [admin-access]
+  payments:
+    status: planned
+    ac_count: 2
+    contract_version: 1
+    depends_on: [admin-access, members]
+  finance:
+    status: planned
+    ac_count: 3
+    contract_version: 1
+    depends_on: [admin-access, payments]
+  notices:
+    status: planned
+    ac_count: 2
+    contract_version: 1
+    depends_on: [admin-access]
+  projects:
+    status: planned
+    ac_count: 2
+    contract_version: 1
+    depends_on: [admin-access]
+  mahfil:
+    status: planned
+    ac_count: 2
+    contract_version: 1
+    depends_on: [admin-access]
+  executive-admins:
+    status: planned
+    ac_count: 3
+    contract_version: 1
+    depends_on: [admin-access]
+  sms:
+    status: planned
+    ac_count: 3
+    contract_version: 1
+    depends_on: [admin-access, members]
+  birthday:
+    status: planned
+    ac_count: 2
+    contract_version: 1
+    depends_on: [sms, members]

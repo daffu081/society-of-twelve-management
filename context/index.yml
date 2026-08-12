@@ -1,0 +1,55 @@
+type: directory-index
+title: "Context — agent knowledge base"
+directory: context
+last_review: 2026-08-13
+description: >-
+  Agent knowledge base for the Society of Twelve Management System. Every file an agent needs is reachable from here.
+start_here: architecture-map.md   # loading policy for all tasks
+directories:
+  - dir: 01-source/
+    index: 01-source/index.yml
+    purpose: Vision, requirements, constraints (raw intent)
+    load_when: Rarely — distilled into ADRs
+  - dir: 02-shared/
+    index: 02-shared/index.yml
+    purpose: Cross-cutting conventions, anti-patterns, glossary
+    load_when: Always (agent-rules + anti-patterns)
+  - dir: 03-business/
+    index: 03-business/index.yml
+    purpose: Business-layer framing
+    load_when: Rarely
+  - dir: 04-architecture/
+    index: 04-architecture/index.yml
+    purpose: ADRs, patterns, folder guidelines
+    load_when: ADR lookup, pattern reference
+  - dir: 05-features/
+    index: 05-features/INDEX.yml
+    purpose: Feature specs — business / technical / test
+    load_when: Every feature task
+  - dir: 06-phase/
+    index: 06-phase/README.md
+    purpose: Phase roadmaps + task files
+    load_when: Phase management
+  - dir: 07-design-guideline/
+    index: 07-design-guideline/index.yml
+    purpose: Design system — colours, type, spacing
+    load_when: UI work
+  - dir: 08-c4-diagram/
+    index: 08-c4-diagram/index.yml
+    purpose: C4 architecture diagrams
+    load_when: Architecture reference
+  - dir: 13-operations/
+    index: 13-operations/index.yml
+    purpose: Runbooks
+    load_when: Incident response
+  - dir: 14-seeds/
+    index: 14-seeds/index.yml
+    purpose: Golden scenario test data
+    load_when: Integration tests
+root_files:
+  - file: WORKFLOW.md
+    purpose: Developer process — how you build with this system, step by step
+  - file: architecture-map.md
+    purpose: Loading policy — read this first
+  - file: agent-rules.md
+    purpose: Hard rules agents must never violate

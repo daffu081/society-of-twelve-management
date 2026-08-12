@@ -1,0 +1,31 @@
+{
+  "custom_instructions": "Before any git operation (commit, push, PR, branch): load context/02-shared/git-conventions.md and follow it exactly. Do NOT skip the confirmation gate — always show the user the diff summary + draft commit message and ask 'Should I commit?' before running git commit. Do NOT use --no-verify. The git-guard PreToolUse hook hard-blocks --no-verify, git add -A/., direct commit/push to main/master/develop, and force-push; a blocked call means you violated git-conventions.md — fix the command, do not work around the hook.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/git-guard.sh\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/context-autosync.py\""
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-spec-cache.sh\""
+          }
+        ]
+      }
+    ]
+  }
+}

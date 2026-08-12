@@ -1,0 +1,8 @@
+type: directory-index
+title: "14-seeds — golden test data"
+directory: 14-seeds
+description: >-
+  Canonical seed data used by integration / E2E tests so everyone tests the same scenario.
+files:
+  - file: golden-scenario.md
+    purpose: The reference dataset + expected outcomes

@@ -1,0 +1,7 @@
+type: directory-index
+title: "13-operations — runbooks"
+directory: 13-operations
+description: Operational runbooks. Loaded during incidents, not normal dev.
+files:
+  - file: disaster-recovery.md
+    purpose: Backup/restore + recovery steps

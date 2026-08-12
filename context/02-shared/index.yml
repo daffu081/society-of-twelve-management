@@ -1,0 +1,23 @@
+type: directory-index
+title: "02-shared — cross-cutting conventions"
+directory: 02-shared
+description: >-
+  Conventions that apply across every feature. anti-patterns.md loads on every task;
+  the rest load on demand (architecture-map Tier D).
+files:
+  - file: anti-patterns.md
+    load_when: Always
+  - file: git-conventions.md
+    load_when: Any git operation
+  - file: tech-stack.md
+    load_when: Adding a dependency
+  - file: db-conventions.md
+    load_when: Touching persistence
+  - file: testing-conventions.md
+    load_when: Writing tests
+  - file: error-codes.md
+    load_when: Throwing/catching errors
+  - file: glossary.md
+    load_when: Disambiguating a domain term
+  - file: dev-setup.md
+    load_when: Setting up a dev environment

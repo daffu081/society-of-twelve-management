@@ -1,0 +1,11 @@
+type: directory-index
+title: "08-c4-diagram — architecture diagrams"
+directory: 08-c4-diagram
+description: C4 model diagrams. Load only the level you need.
+files:
+  - file: l1-system-context.md
+    level: System context — the app + external actors/systems
+  - file: l2-container.md
+    level: Containers — apps, services, data stores
+  - file: l3-component.md
+    level: Components — inside a container

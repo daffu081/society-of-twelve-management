@@ -1,0 +1,12 @@
+type: directory-index
+title: "04-architecture — decisions, patterns, guidelines"
+directory: 04-architecture
+description: >-
+  ADRs are append-only and numbered. Use decisions/ADR-template.md to add one.
+files:
+  - file: guidelines.md
+    load_when: Adding a new file — check folder placement + naming
+  - file: patterns.md
+    load_when: You need a copy-paste pattern
+  - file: decisions/
+    load_when: Look up ONE ADR by number — never read the whole dir
