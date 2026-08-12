@@ -24,6 +24,8 @@ surfacing running notices, projects, mahfil and the consenting-members directory
 ## Business rules
 - BR1: Content is Bengali-first.
 - BR2: Only members who opted in (`show_on_public_directory`) appear publicly.
+- BR3: The footer shows the developer credit "Developed By Sabbir Ahmed Sakib".
+- BR4: The Society of Twelve logo/branding is used consistently across the public site.
 
 ## Acceptance criteria
 
@@ -38,6 +40,12 @@ surfacing running notices, projects, mahfil and the consenting-members directory
 - **Given**: the homepage
 - **When**: it loads
 - **Then**: the footer copyright year is the current year
+
+### AC3: Footer shows developer credit and consistent branding
+- **Trace**: US1, BR3, BR4
+- **Given**: any public page showing the footer
+- **When**: the visitor views it
+- **Then**: the footer shows "Developed By Sabbir Ahmed Sakib" and the page uses the Society of Twelve logo/branding
 
 ## Out of scope (not asked for)
 - Public login or member self-service on the public site.

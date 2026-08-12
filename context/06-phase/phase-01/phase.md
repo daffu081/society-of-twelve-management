@@ -5,7 +5,7 @@ tags: [phase-01, phase-summary]
 last_review: 2026-08-13
 status: in_progress
 started_at: "2026-08-13"
-ac_total: 6
+ac_total: 10
 ac_green: 0
 ---
 
@@ -25,10 +25,12 @@ dashboard cards but **not wired** — those are future phases.
 ## Feature table
 | # | Feature | ACs | Status | What it does | Task |
 |---|---|---|---|---|---|
-| 1 | **admin-access** | 4 | 🔄 built, unverified | Magic-link login + active-admin gate + logout | — |
-| 2 | **public-site** | 2 | 🔄 built, unverified | Static Bengali homepage + footer year | — |
+| 1 | **admin-access** | 4 | 🔄 built, unverified | Magic-link login + active-admin gate + logout | T01 |
+| 2 | **public-site** | 3 | 🔄 built, unverified | Static Bengali homepage + footer year + developer credit/branding | T02 |
+| 3 | **_cross-cutting** | 1 | 🔄 todo | No secret credentials in the public website | T03 |
+| 4 | **member-profile** | 2 | 🔄 todo | Capture blood group at registration + show on profile | T04 |
 
-**Total: 6 ACs (4 + 2)**
+**Total: 10 ACs (4 + 3 + 1 + 2)**
 
 ## Not in this phase (scaffolded only — see BACKLOG)
 members, payments, finance, notices, projects, mahfil, executive-admins (dashboard cards, no logic);
