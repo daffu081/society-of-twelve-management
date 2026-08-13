@@ -9,6 +9,9 @@ status: todo
 
 # T04 — Member profile blood group
 
+> **Built, unverified.** Blood-group column added; minimal `admin/members.html` (registration form
+> + list) hosts capture & display. ACs need a live Supabase to verify — kept `status: todo` until then.
+
 ## Description
 Capture a member's blood group on the registration form and show it on their member profile.
 This brings the first member-profile field into the foundation phase.

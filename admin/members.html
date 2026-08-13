@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Members | Society of Twelve</title>
+
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; color: #17202a; }
+    header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 18px 5%; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo { width: 45px; height: 45px; border-radius: 10px; background: #111827; color: #fff; display: grid; place-items: center; font-weight: bold; }
+    main { padding: 35px 5%; max-width: 900px; margin: auto; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 25px; margin-bottom: 25px; }
+    label { display: block; margin: 12px 0 6px; font-weight: 600; }
+    input, select { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 15px; }
+    button { margin-top: 18px; padding: 12px 18px; border: 0; border-radius: 10px; background: #111827; color: #fff; font-size: 15px; cursor: pointer; }
+    button:disabled { opacity: .6; }
+    #message { margin-top: 12px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eef1f4; }
+    a.back { color: #64748b; text-decoration: none; }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">SOT</div>
+    <div><strong>Society of Twelve</strong> — Members</div>
+  </div>
+  <a class="back" href="dashboard.html">&larr; Dashboard</a>
+</header>
+
+<main>
+
+  <div class="panel">
+    <h2>Register a member</h2>
+    <form id="memberForm">
+      <label for="name">Name</label>
+      <input id="name" type="text" required>
+
+      <label for="mobile">Mobile</label>
+      <input id="mobile" type="text" required>
+
+      <label for="blood_group">Blood group</label>
+      <select id="blood_group">
+        <option value="">— select —</option>
+        <option>A+</option><option>A-</option>
+        <option>B+</option><option>B-</option>
+        <option>AB+</option><option>AB-</option>
+        <option>O+</option><option>O-</option>
+      </select>
+
+      <button id="saveButton" type="submit">Save member</button>
+    </form>
+    <div id="message"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Members</h2>
+    <table>
+      <thead><tr><th>Member ID</th><th>Name</th><th>Blood group</th></tr></thead>
+      <tbody id="memberRows"><tr><td colspan="3">Loading...</td></tr></tbody>
+    </table>
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
+<script src="admin.js"></script>
+
+<script>
+(async () => {
+  const result = await checkAdminAccess();
+  if (!result) return;
+  const { admin } = result;
+
+  const rows = document.getElementById("memberRows");
+  const message = document.getElementById("message");
+  const button = document.getElementById("saveButton");
+
+  async function loadMembers() {
+    const { data, error } = await supabaseClient
+      .from("members")
+      .select("member_id, name, blood_group")
+      .order("created_at", { ascending: false });
+    if (error) {
+      console.error(error);
+      rows.innerHTML = `<tr><td colspan="3">${error.message || "Could not load members."}</td></tr>`;
+      return;
+    }
+    rows.innerHTML = data.length
+      ? data.map(m =>
+          `<tr><td>${m.member_id}</td><td>${m.name}</td><td>${m.blood_group || "—"}</td></tr>`
+        ).join("")
+      : `<tr><td colspan="3">No members yet.</td></tr>`;
+  }
+
+  // ponytail: count-based id, races under concurrent adds; proper SOT#### sequencing
+  // belongs to the members feature when it's built.
+  async function nextMemberId() {
+    const { count } = await supabaseClient
+      .from("members")
+      .select("*", { count: "exact", head: true });
+    return "SOT" + String((count || 0) + 1).padStart(4, "0");
+  }
+
+  document.getElementById("memberForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    button.disabled = true;
+    message.style.color = "#dc2626";
+    message.textContent = "";
+
+    const { error } = await supabaseClient.from("members").insert({
+      member_id: await nextMemberId(),
+      name: document.getElementById("name").value.trim(),
+      mobile: document.getElementById("mobile").value.trim(),
+      blood_group: document.getElementById("blood_group").value || null,
+    });
+
+    if (error) {
+      console.error(error);
+      message.textContent = error.message || "Could not save member.";
+    } else {
+      message.style.color = "#16a34a";
+      message.textContent = "Member saved.";
+      e.target.reset();
+      await loadMembers();
+    }
+    button.disabled = false;
+  });
+
+  await loadMembers();
+})();
+</script>
+
+</body>
+</html>
