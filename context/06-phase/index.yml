@@ -7,5 +7,5 @@ phases:
     title: "Phase 01 — Foundation (example)"
     status: in_progress
     ac_total: 10
-    ac_green: 0
+    ac_green: 4
 # - one block per phase; /create-phase appends, /phase-finish sets status: locked -

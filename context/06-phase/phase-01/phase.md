@@ -6,7 +6,7 @@ last_review: 2026-08-13
 status: in_progress
 started_at: "2026-08-13"
 ac_total: 10
-ac_green: 0
+ac_green: 4
 ---
 
 # Phase 01 — Foundation (auth + scaffold)
@@ -26,9 +26,9 @@ dashboard cards but **not wired** — those are future phases.
 | # | Feature | ACs | Status | What it does | Task |
 |---|---|---|---|---|---|
 | 1 | **admin-access** | 4 | 🔄 built, unverified | Magic-link login + active-admin gate + logout | T01 |
-| 2 | **public-site** | 3 | 🔄 built, unverified | Static Bengali homepage + footer year + developer credit/branding | T02 |
-| 3 | **_cross-cutting** | 1 | 🔄 todo | No secret credentials in the public website | T03 |
-| 4 | **member-profile** | 2 | 🔄 todo | Capture blood group at registration + show on profile | T04 |
+| 2 | **public-site** | 3 | ✅ done | Static Bengali homepage + footer year + developer credit/branding | T02 |
+| 3 | **_cross-cutting** | 1 | ✅ done | No secret credentials in the public website | T03 |
+| 4 | **member-profile** | 2 | 🔄 built, unverified | Capture blood group at registration + show on profile | T04 |
 
 **Total: 10 ACs (4 + 3 + 1 + 2)**
 
