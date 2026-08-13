@@ -4,7 +4,7 @@ file_type: task
 phase: 1
 task_id: T02
 feature: public-site
-status: todo
+status: done
 ---
 
 # T02 — Public site (homepage + footer year + developer credit/branding)
@@ -17,9 +17,9 @@ community sees before login.
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC1 | Homepage renders | ⬜ |
-| AC2 | Footer year is current | ⬜ |
-| AC3 | Footer shows developer credit and consistent branding | ⬜ |
+| AC1 | Homepage renders | ✅ |
+| AC2 | Footer year is current | ✅ |
+| AC3 | Footer shows developer credit and consistent branding | ✅ |
 
 ## Files to read first
 | File | Why |

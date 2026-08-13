@@ -25,6 +25,7 @@ tags: [public-site, technical-context]
 |---|---|---|
 | Static sections | Done | `index.html` |
 | Footer year | Done | `assets/js/app.js` |
+| Footer developer credit + branding | Done | `index.html` (static): "Developed By Sabbir Ahmed Sakib" + SOT logo |
 | Running notices/projects/mahfil surfacing | Not started | placeholder copy only |
 | Public member directory | Not started | needs `members` public read |
 
