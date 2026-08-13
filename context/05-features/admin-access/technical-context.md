@@ -40,7 +40,7 @@ async logoutAdmin() -> void
 ## Code file mapping
 | File | Purpose |
 |---|---|
-| `admin/login.html` | Login form + assets |
+| `admin/login.html` | Passwordless login form (email only → "Send Login Link") |
 | `admin/admin.js` | Client, login handler, `checkAdminAccess`, `logoutAdmin` |
 | `admin/dashboard.html` | Calls `checkAdminAccess`, renders name/role |
 | `admins` (table) | `auth_user_id`, `role`, `active`, `permissions` |
@@ -50,5 +50,7 @@ async logoutAdmin() -> void
 - `supabaseClient.from("admins").select("*").eq("auth_user_id", user.id).eq("active", true).single()`
 
 ## Known issues
-- `login.html` renders a **password** field that `admin.js` ignores (magic-link only) — misleading UI. (AC1)
 - No Postgres RLS: the `admins` gate is client-side only and bypassable via the anon API — see ADR-001 / db-conventions D6.
+
+## Resolved
+- (T01) `login.html` password field removed — the form is now magic-link only, matching `admin.js`. (AC1)

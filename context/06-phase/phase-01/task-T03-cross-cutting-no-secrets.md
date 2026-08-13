@@ -4,7 +4,7 @@ file_type: task
 phase: 1
 task_id: T03
 feature: _cross-cutting
-status: todo
+status: done
 ---
 
 # T03 — No secret credentials in the public website
@@ -16,7 +16,7 @@ only safe, public-facing configuration. A foundational security guarantee for th
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC1 | No secret credentials in the public website | ⬜ |
+| AC1 | No secret credentials in the public website | ✅ |
 
 ## Files to read first
 | File | Why |

@@ -2,11 +2,13 @@ create extension if not exists pgcrypto;
 create table if not exists public.members (
  id uuid primary key default gen_random_uuid(), member_id text unique not null, name text not null,
  father_name text, house_name text, village text, mobile text not null, whatsapp text, email text,
- dob date, profession text, fee_category text, monthly_fee numeric(12,2), join_date date,
+ dob date, blood_group text, profession text, fee_category text, monthly_fee numeric(12,2), join_date date,
  active boolean default true, photo_url text, education jsonb, skills text[], interests text[],
  nid_number text, birth_registration_id text, passport_number text, short_bio text,
  show_on_public_directory boolean default false, created_at timestamptz default now(), updated_at timestamptz default now()
 );
+-- idempotent: add blood_group to members tables that already exist
+alter table public.members add column if not exists blood_group text;
 create table if not exists public.payments (
  id uuid primary key default gen_random_uuid(), receipt_no text unique not null, member_id uuid references public.members(id),
  amount numeric(12,2) not null, purpose text not null, payment_method text not null, payment_date timestamptz default now(), notes text, created_by uuid, created_at timestamptz default now()

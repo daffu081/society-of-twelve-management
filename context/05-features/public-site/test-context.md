@@ -18,12 +18,14 @@ tags: [public-site, test-context]
 ## Coverage status
 | AC / scenario | Status | Test file |
 |---|---|---|
-| AC1 homepage renders | Manual only | — |
-| AC2 footer year current | Manual only | — |
+| AC1 homepage renders | ✅ verified (static, by inspection) | — |
+| AC2 footer year current | ✅ verified (static, by inspection) | — |
+| AC3 footer credit + branding | ✅ verified (static, by inspection) | — |
 
 ## Manual checks
 - AC1: open `/` → all sections visible.
 - AC2: footer shows the current year.
+- AC3: footer shows "Developed By Sabbir Ahmed Sakib" and the SOT logo/branding is present.
 
 ## Rules for writing new tests
 - Once dynamic content lands, stub the Supabase reads.

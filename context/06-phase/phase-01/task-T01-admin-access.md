@@ -9,6 +9,9 @@ status: todo
 
 # T01 — Admin access (magic-link login + active-admin gate + logout)
 
+> **Built, unverified.** Code is in place; `login.html` password field removed (now magic-link only).
+> ACs need a live Supabase + real `config.js` creds to verify — kept `status: todo` until then.
+
 ## Description
 Deliver secure, passwordless admin sign-in and the gate that lets only active admins reach the
 dashboard, plus logout. This is the foundation every admin module in later phases builds on.
