@@ -1,52 +1,47 @@
 ---
 spec_version: 1
-title: "T<NN> — <Task Title>"
-last_review: YYYY-MM-DD
 file_type: task
-type: phase-task
-tags: [phase-<N>, task, <feature-slug>]
 phase: <N>
 task_id: T<NN>
 feature: <feature-slug>
 status: todo
-ac_count: 0
 ---
 
 # T<NN> — <Task Title>
 
 ## Description
-<!-- 2–4 sentences. What this builds, why it's in this phase, what problem it solves. -->
+<!-- 3–5 sentences. What this builds, which spec section it satisfies, why it's in this phase,
+     what it depends on and what depends on it. Give enough context to start without re-reading the spec. -->
 
-## Goal
-<!-- One sentence: the concrete end state. "User can do X." -->
+## Delivers these ACs
+<!-- Pull from requirement/<feature>/requirement.md — reference by ID, don't restate rules. -->
+| AC | Title | Done? |
+|----|-------|-------|
+| AC1 | <title from requirement> | ⬜ |
 
-## Acceptance Criteria
-| AC | Title | Tier | Done? |
-|---|---|---|---|
-| AC1 | … | Unit | ⬜ |
-| AC2 | … | Integration | ⬜ |
-
-## Agent Instructions
-### What to implement
+## Implementation approach
+<!-- Ordered steps: how to build it. Data layer → server/auth → admin UI → public/member UI → automation.
+     Business-aware but not a full design; /implement-task fills in specifics. -->
 1. …
 2. …
 
-### Files to read first
+## Files to create / modify
+<!-- Best-known target files. Action = Create | Update. /implement-task may adjust. -->
+| Action | File | Why |
+|--------|------|-----|
+| Create | `<path>` | <what goes here> |
+| Update | `<path>` | <what changes> |
+
+## Files to read first
 | File | Why |
-|---|---|
-| `context/05-features/<feature>/business-context.md` | ACs, BRs |
-| `context/05-features/<feature>/technical-context.md` | current state |
-| `context/04-architecture/patterns.md` | patterns to copy |
+|------|-----|
+| `context/06-phase/<PHASE>/requirement/<feature>/requirement.md` | the ACs (pure business) this task delivers |
+| `context/05-features/<feature>/technical-context.md` | current state, public surface, file mapping — only if it already exists |
+| `context/05-features/<feature>/test-context.md` | coverage table — only if it already exists |
+| `context/04-architecture/patterns.md` | patterns to follow |
 
-### Key files to create / modify
-| Action | File |
-|---|---|
-| Create | `<source path>` |
-| Update | `context/05-features/<feature>/technical-context.md` |
-
-### Definition of done
-- [ ] All ACs ✅
-- [ ] Lint / analyze clean
-- [ ] Tests pass
-- [ ] `technical-context.md` updated
-- [ ] Phase task row flipped to ✅
+## Definition of done
+- [ ] Every AC above is ✅ with a passing test
+- [ ] lint clean, tests green
+- [ ] `technical-context.md` + `test-context.md` updated (done by `/implement-task`)
+- [ ] This task's `status: done`; phase row flipped to ✅
