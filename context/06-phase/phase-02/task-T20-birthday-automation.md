@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T20
 feature: birthday
-status: todo
+status: done
 ---
 
 # T20 — Birthday automation
@@ -15,8 +15,8 @@ Birthday automation (spec §13): a scheduled daily job finds members whose DOB m
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC3 | Admin birthday calendar | ⬜ |
-| AC4 | Automatic once-per-year greeting | ⬜ |
+| AC3 | Admin birthday calendar | ✅ |
+| AC4 | Automatic once-per-year greeting | ✅ |
 
 ## Implementation approach
 1. Add a birthday_log table for once-per-year dedup
