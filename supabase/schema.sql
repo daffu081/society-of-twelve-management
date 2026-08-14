@@ -107,3 +107,15 @@ create table if not exists public.awards (
  recipient_name text, description text, award_date date, image_url text,
  visible boolean default false, created_at timestamptz default now(), updated_at timestamptz default now()
 );
+-- rules & regulations (T17): super-admin-managed, versioned
+create table if not exists public.rules (
+ id uuid primary key default gen_random_uuid(), title text not null, body text not null,
+ status text default 'draft', -- draft | published | archived
+ version integer default 1, display_order integer default 0,
+ created_at timestamptz default now(), updated_at timestamptz default now()
+);
+create table if not exists public.rule_versions (
+ id uuid primary key default gen_random_uuid(), rule_id uuid references public.rules(id) not null,
+ version integer not null, title text not null, body text not null, status text,
+ archived_at timestamptz default now()
+);

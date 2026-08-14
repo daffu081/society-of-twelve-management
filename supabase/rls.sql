@@ -393,3 +393,35 @@ drop policy if exists awards_perm_update on public.awards;
 create policy awards_perm_update on public.awards
   for update using (public.has_permission('awards_write'))
   with check (public.has_permission('awards_write'));
+
+-- Rules (rules feature): public reads published; ONLY Super Admins write (BR2).
+alter table public.rules enable row level security;
+drop policy if exists rules_public_read on public.rules;
+create policy rules_public_read on public.rules
+  for select using (status = 'published');
+drop policy if exists rules_super_all on public.rules;
+create policy rules_super_all on public.rules
+  for all using (public.is_super_admin()) with check (public.is_super_admin());
+
+alter table public.rule_versions enable row level security;
+drop policy if exists rule_versions_super_all on public.rule_versions;
+create policy rule_versions_super_all on public.rule_versions
+  for all using (public.is_super_admin()) with check (public.is_super_admin());
+
+-- Version history (AC2): every content change snapshots the previous version.
+create or replace function public.rules_keep_history() returns trigger
+  language plpgsql security definer set search_path = public as $$
+begin
+  if new.title is distinct from old.title or new.body is distinct from old.body then
+    insert into rule_versions (rule_id, version, title, body, status)
+    values (old.id, old.version, old.title, old.body, old.status);
+    new.version := old.version + 1;
+  end if;
+  new.updated_at := now();
+  return new;
+end;
+$$;
+drop trigger if exists rules_keep_history on public.rules;
+create trigger rules_keep_history
+  before update on public.rules
+  for each row execute function public.rules_keep_history();
