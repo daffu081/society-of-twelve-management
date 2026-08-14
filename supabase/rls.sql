@@ -481,3 +481,63 @@ create or replace view public.members_by_profession as
   where active = true and public.has_permission('members_read')
   group by 1 order by n desc;
 grant select on public.members_by_profession to authenticated;
+
+-- Reports (reports feature): permission-gated report views. Each view's WHERE
+-- clause checks reports_read AND the source area's own permission, so a report
+-- returns rows only to admins allowed to see that data (BR3). Exports read the
+-- same views, so export inherits the same gating.
+create or replace view public.report_member_list as
+  select member_id, name, mobile, profession, fee_category, blood_group,
+         case when active then 'Active' else 'Inactive' end as status, join_date
+  from public.members
+  where public.has_permission('reports_read') and public.has_permission('members_read');
+grant select on public.report_member_list to authenticated;
+
+create or replace view public.report_payment_history as
+  select p.receipt_no, m.member_id, m.name, p.amount, p.purpose, p.payment_method, p.payment_date
+  from public.payments p left join public.members m on m.id = p.member_id
+  where public.has_permission('reports_read') and public.has_permission('payments_read');
+grant select on public.report_payment_history to authenticated;
+
+create or replace view public.report_monthly_collection as
+  select to_char(date_trunc('month', payment_date), 'YYYY-MM') as month,
+         count(*) as payments, coalesce(sum(amount), 0) as total
+  from public.payments
+  where public.has_permission('reports_read') and public.has_permission('payments_read')
+  group by 1 order by 1 desc;
+grant select on public.report_monthly_collection to authenticated;
+
+create or replace view public.report_due_members as
+  select member_id, name, mobile, monthly_fee, due_amount, last_payment_date
+  from public.member_dues
+  where due_amount > 0 and public.has_permission('reports_read');
+grant select on public.report_due_members to authenticated;
+
+create or replace view public.report_income as
+  select source, amount, income_date, notes from public.income
+  where public.has_permission('reports_read') and public.has_permission('finance_read');
+grant select on public.report_income to authenticated;
+
+create or replace view public.report_expense as
+  select category, amount, expense_date, notes from public.expenses
+  where public.has_permission('reports_read') and public.has_permission('finance_read');
+grant select on public.report_expense to authenticated;
+
+create or replace view public.report_project_finance as
+  select title, status, budget, amount_spent,
+         (coalesce(budget,0) - coalesce(amount_spent,0)) as remaining
+  from public.projects
+  where public.has_permission('reports_read') and public.has_permission('projects_read');
+grant select on public.report_project_finance to authenticated;
+
+create or replace view public.report_sms_log as
+  select s.template_key, m.name as member, s.recipient_mobile, s.status, s.sent_at, s.created_at
+  from public.sms_logs s left join public.members m on m.id = s.member_id
+  where public.has_permission('reports_read') and public.has_permission('sms_read');
+grant select on public.report_sms_log to authenticated;
+
+create or replace view public.report_birthday_log as
+  select b.birthday_year, m.member_id, m.name, b.created_at
+  from public.birthday_logs b left join public.members m on m.id = b.member_id
+  where public.has_permission('reports_read') and public.has_permission('sms_read');
+grant select on public.report_birthday_log to authenticated;

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports | Society of Twelve</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; color: #17202a; }
+    header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 18px 5%; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo { width: 45px; height: 45px; border-radius: 10px; background: #111827; color: #fff; display: grid; place-items: center; font-weight: bold; }
+    main { padding: 35px 5%; max-width: 1000px; margin: auto; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 25px; margin-bottom: 25px; }
+    label { display: block; margin: 12px 0 6px; font-weight: 600; }
+    select { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 15px; }
+    button { padding: 10px 16px; border: 0; border-radius: 10px; background: #111827; color: #fff; font-size: 14px; cursor: pointer; margin-right: 8px; }
+    button.secondary { background: #e5e7eb; color: #111827; }
+    button:disabled { opacity: .6; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #eef1f4; font-size: 14px; }
+    th { background: #f9fafb; }
+    #message { margin-top: 12px; color: #dc2626; }
+    a.back { color: #64748b; text-decoration: none; }
+    .toolbar { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+    .toolbar > div { flex: 1; min-width: 220px; }
+    @media print { header, .toolbar, .actions, a.back { display: none; } }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">SOT</div>
+    <div><strong>Society of Twelve</strong> — Reports</div>
+  </div>
+  <a class="back" href="dashboard.html">&larr; Dashboard</a>
+</header>
+
+<main>
+
+  <div class="panel">
+    <div class="toolbar">
+      <div>
+        <label for="report">Report</label>
+        <select id="report"><option value="">— select a report —</option></select>
+      </div>
+      <div class="actions">
+        <button id="exportCsv" disabled>Export CSV</button>
+        <button id="exportExcel" class="secondary" disabled>Export Excel</button>
+        <button id="exportPdf" class="secondary" disabled>Export PDF</button>
+      </div>
+    </div>
+    <div id="message"></div>
+  </div>
+
+  <div class="panel">
+    <h2 id="reportTitle">Select a report</h2>
+    <div id="reportBody"><p style="color:#64748b">Pick a report above to view it.</p></div>
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
+<script src="admin.js"></script>
+
+<script>
+(async () => {
+  const result = await checkAdminAccess();
+  if (!result) return;
+  const { admin } = result;
+  const can = (cap) => admin.role === "super_admin" || admin.permissions?.[cap] === true;
+
+  // report catalog: view name + label + the area permission it needs (BR3).
+  // reports_read is required for all; the view enforces both server-side anyway.
+  const REPORTS = [
+    { key: "report_member_list", label: "Member list", need: "members_read" },
+    { key: "report_payment_history", label: "Payment history", need: "payments_read" },
+    { key: "report_monthly_collection", label: "Monthly collection", need: "payments_read" },
+    { key: "report_due_members", label: "Due members", need: "payments_read" },
+    { key: "report_income", label: "Income", need: "finance_read" },
+    { key: "report_expense", label: "Expense", need: "finance_read" },
+    { key: "report_project_finance", label: "Project finance", need: "projects_read" },
+    { key: "report_sms_log", label: "SMS log", need: "sms_read" },
+    { key: "report_birthday_log", label: "Birthday delivery log", need: "sms_read" },
+  ];
+
+  const reportSelect = document.getElementById("report");
+  const reportBody = document.getElementById("reportBody");
+  const reportTitle = document.getElementById("reportTitle");
+  const message = document.getElementById("message");
+  const btnCsv = document.getElementById("exportCsv");
+  const btnExcel = document.getElementById("exportExcel");
+  const btnPdf = document.getElementById("exportPdf");
+  let currentRows = [];
+  let currentLabel = "";
+
+  // permission-filter the report menu so a user only sees reports they may open (BR3)
+  reportSelect.innerHTML = `<option value="">— select a report —</option>` +
+    REPORTS.filter(r => can("reports_read") && can(r.need))
+      .map(r => `<option value="${r.key}">${r.label}</option>`).join("");
+  if (!can("reports_read")) {
+    message.textContent = "You need the reports_read permission to view reports.";
+  }
+
+  function toCsv(rows) {
+    if (!rows.length) return "";
+    const cols = Object.keys(rows[0]);
+    const esc = (v) => `"${String(v ?? "").replaceAll('"', '""')}"`;
+    return [cols.join(","), ...rows.map(r => cols.map(c => esc(r[c])).join(","))].join("\r\n");
+  }
+
+  function download(filename, content, type) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function loadReport(key) {
+    const r = REPORTS.find(x => x.key === key);
+    currentLabel = r ? r.label : "";
+    reportTitle.textContent = currentLabel || "Select a report";
+    message.textContent = "";
+    if (!key) { reportBody.innerHTML = `<p style="color:#64748b">Pick a report above.</p>`; return; }
+    reportBody.innerHTML = "Loading…";
+    const { data, error } = await supabaseClient.from(key).select("*");
+    if (error) {
+      console.error(error);
+      message.textContent = error.message || "Could not load the report.";
+      reportBody.innerHTML = "";
+      currentRows = [];
+      setExport(false);
+      return;
+    }
+    currentRows = data;
+    if (!data.length) {
+      reportBody.innerHTML = `<p style="color:#64748b">No rows.</p>`;
+      setExport(false);
+      return;
+    }
+    const cols = Object.keys(data[0]);
+    reportBody.innerHTML = `<table><thead><tr>${cols.map(c => `<th>${c}</th>`).join("")}</tr></thead>
+      <tbody>${data.map(row => `<tr>${cols.map(c => `<td>${row[c] ?? "—"}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+    setExport(true);
+  }
+
+  function setExport(on) { [btnCsv, btnExcel, btnPdf].forEach(b => b.disabled = !on); }
+
+  reportSelect.addEventListener("change", () => loadReport(reportSelect.value));
+
+  // CSV and Excel: Excel opens the same UTF-8 CSV cleanly; PDF: the browser's print-to-PDF
+  // over the rendered table (keeps the site build-free — no PDF/xlsx library).
+  btnCsv.addEventListener("click", () =>
+    download(`${currentLabel.replaceAll(" ", "_")}.csv`, toCsv(currentRows), "text/csv;charset=utf-8"));
+  btnExcel.addEventListener("click", () =>
+    download(`${currentLabel.replaceAll(" ", "_")}.xls`, "﻿" + toCsv(currentRows), "application/vnd.ms-excel;charset=utf-8"));
+  btnPdf.addEventListener("click", () => window.print());
+})();
+</script>
+
+</body>
+</html>
