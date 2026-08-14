@@ -6,7 +6,7 @@ file_type: business-context
 contract_version: 1
 status: in_progress
 depends_on: [admin-access]
-last_review: 2026-08-13
+last_review: 2026-08-14
 frozen: false
 tags: [member-profile, business-context]
 ---
