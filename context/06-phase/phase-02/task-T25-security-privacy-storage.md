@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T25
 feature: _cross-cutting
-status: todo
+status: done
 ---
 
 # T25 — Security, privacy & storage
@@ -15,9 +15,9 @@ The security, privacy and storage hardening layer (spec §7, §29–§30) underp
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC2 | Enforced access control | ⬜ |
-| AC3 | Public exposure is safe-only | ⬜ |
-| AC4 | Storage separates public and private files | ⬜ |
+| AC2 | Enforced access control | ✅ |
+| AC3 | Public exposure is safe-only | ✅ |
+| AC4 | Storage separates public and private files | ✅ |
 
 ## Implementation approach
 1. Enable RLS on every protected table with role/permission-backed policies
