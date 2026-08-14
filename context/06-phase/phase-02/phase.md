@@ -5,12 +5,12 @@ tags: [phase-02, phase-summary]
 status: in_progress
 started_at: 2026-08-14
 ac_total: 54
-ac_green: 49
+ac_green: 51
 ---
 
 # Phase 02 — TBD
 
-> **Status: 🔄 IN PROGRESS — 49 / 54 ACs green**
+> **Status: 🔄 IN PROGRESS — 51 / 54 ACs green**
 
 ## What this phase delivers
 
@@ -48,7 +48,7 @@ site), SMS + birthday automation, and the P4 hardening layer (audit, bin, report
 | T21 | **dashboard** | 2 | ✅ done | Permission-aware figures + charts | AC1–AC2 |
 | T22 | **reports** | 2 | ✅ done | View + export key reports (CSV/Excel/PDF) | AC1–AC2 |
 | T23 | **audit** | 1 | ✅ done | Log important administrative actions | AC1 |
-| T24 | **bin** | 2 | ⬜ todo | 30-day recoverable soft-delete + cleanup | AC1–AC2 |
+| T24 | **bin** | 2 | ✅ done | 30-day recoverable soft-delete + cleanup | AC1–AC2 |
 | T25 | **_cross-cutting** | 3 | ⬜ todo | Server-enforced access control, safe public, storage split | AC2–AC4 |
 
 **Total: 54 ACs**
