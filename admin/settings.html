@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings | Society of Twelve</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; color: #17202a; }
+    header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 18px 5%; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo { width: 45px; height: 45px; border-radius: 10px; background: #111827; color: #fff; display: grid; place-items: center; font-weight: bold; }
+    main { padding: 35px 5%; max-width: 720px; margin: auto; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 25px; margin-bottom: 25px; }
+    label { display: block; margin: 12px 0 6px; font-weight: 600; }
+    input { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 15px; }
+    button { margin-top: 18px; padding: 12px 18px; border: 0; border-radius: 10px; background: #111827; color: #fff; font-size: 15px; cursor: pointer; }
+    button:disabled { opacity: .6; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eef1f4; }
+    td input { padding: 8px; }
+    td button { margin: 0; padding: 8px 14px; font-size: 14px; }
+    #message { margin-top: 12px; }
+    a.back { color: #64748b; text-decoration: none; }
+    .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 0 18px; }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">SOT</div>
+    <div><strong>Society of Twelve</strong> — Settings</div>
+  </div>
+  <a class="back" href="dashboard.html">&larr; Dashboard</a>
+</header>
+
+<main>
+
+  <div class="panel">
+    <h2>Profession categories &amp; monthly fees</h2>
+    <p style="color:#64748b;font-size:14px">Fees drive member dues. Changing a fee applies to
+      future dues only — recorded payments keep their original amounts.</p>
+    <table>
+      <thead><tr><th>Category</th><th>Monthly fee (BDT)</th><th></th></tr></thead>
+      <tbody id="categoryRows"><tr><td colspan="3">Loading...</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h3>Add a category</h3>
+    <form id="categoryForm">
+      <div class="grid">
+        <div>
+          <label for="name">Category name</label>
+          <input id="name" type="text" required>
+        </div>
+        <div>
+          <label for="monthly_fee">Monthly fee (BDT)</label>
+          <input id="monthly_fee" type="number" step="0.01" min="0" required>
+        </div>
+      </div>
+      <button id="addButton" type="submit">Add category</button>
+    </form>
+    <div id="message"></div>
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
+<script src="admin.js"></script>
+
+<script>
+(async () => {
+  const result = await checkAdminAccess();
+  if (!result) return;
+
+  const rows = document.getElementById("categoryRows");
+  const message = document.getElementById("message");
+
+  function say(ok, text) {
+    message.style.color = ok ? "#16a34a" : "#dc2626";
+    message.textContent = text;
+  }
+
+  async function loadCategories() {
+    const { data, error } = await supabaseClient
+      .from("fee_categories").select("*").order("name");
+    if (error) {
+      console.error(error);
+      rows.innerHTML = `<tr><td colspan="3">${error.message || "Could not load categories."}</td></tr>`;
+      return;
+    }
+    rows.innerHTML = data.length
+      ? data.map(c => `<tr data-id="${c.id}">
+          <td>${c.name}</td>
+          <td><input type="number" step="0.01" min="0" value="${c.monthly_fee}" aria-label="fee for ${c.name}"></td>
+          <td><button type="button">Save</button></td>
+        </tr>`).join("")
+      : `<tr><td colspan="3">No categories yet — run supabase/seed.sql or add one below.</td></tr>`;
+  }
+
+  rows.addEventListener("click", async (e) => {
+    if (e.target.tagName !== "BUTTON") return;
+    const tr = e.target.closest("tr[data-id]");
+    const fee = tr.querySelector("input").value; // string → numeric(12,2); never a JS float
+    e.target.disabled = true;
+    const { error } = await supabaseClient.from("fee_categories")
+      .update({ monthly_fee: fee, updated_at: new Date().toISOString() })
+      .eq("id", tr.dataset.id);
+    if (error) { console.error(error); say(false, error.message || "Could not save fee."); }
+    else say(true, "Fee updated. Applies to future dues only.");
+    e.target.disabled = false;
+  });
+
+  document.getElementById("categoryForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const button = document.getElementById("addButton");
+    button.disabled = true;
+    const { error } = await supabaseClient.from("fee_categories").insert({
+      name: document.getElementById("name").value.trim(),
+      monthly_fee: document.getElementById("monthly_fee").value, // string → numeric(12,2)
+    });
+    if (error) { console.error(error); say(false, error.message || "Could not add category."); }
+    else {
+      say(true, "Category added.");
+      e.target.reset();
+      await loadCategories();
+    }
+    button.disabled = false;
+  });
+
+  await loadCategories();
+})();
+</script>
+
+</body>
+</html>

@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T04
 feature: profession-fee
-status: todo
+status: done
 ---
 
 # T04 — Profession & fee management
@@ -15,9 +15,9 @@ Implement admin-editable profession categories and monthly fees (spec §8: Busin
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC1 | Configure profession fees | ⬜ |
-| AC2 | Custom fee per member | ⬜ |
-| AC3 | Fee change doesn't rewrite history | ⬜ |
+| AC1 | Configure profession fees | ✅ |
+| AC2 | Custom fee per member | ✅ |
+| AC3 | Fee change doesn't rewrite history | ✅ |
 
 ## Implementation approach
 1. Add a profession/fee config table seeded with the initial tiers

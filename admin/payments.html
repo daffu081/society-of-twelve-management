@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payments | Society of Twelve</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; color: #17202a; }
+    header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 18px 5%; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo { width: 45px; height: 45px; border-radius: 10px; background: #111827; color: #fff; display: grid; place-items: center; font-weight: bold; }
+    main { padding: 35px 5%; max-width: 900px; margin: auto; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 25px; margin-bottom: 25px; }
+    label { display: block; margin: 12px 0 6px; font-weight: 600; }
+    input, select, textarea { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 15px; font-family: inherit; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+    button { margin-top: 18px; padding: 12px 18px; border: 0; border-radius: 10px; background: #111827; color: #fff; font-size: 15px; cursor: pointer; }
+    button:disabled { opacity: .6; }
+    #message { margin-top: 12px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eef1f4; }
+    a.back { color: #64748b; text-decoration: none; }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">SOT</div>
+    <div><strong>Society of Twelve</strong> — Payments</div>
+  </div>
+  <a class="back" href="dashboard.html">&larr; Dashboard</a>
+</header>
+
+<main>
+
+  <div class="panel">
+    <h2>Record a payment</h2>
+    <form id="paymentForm">
+      <div class="grid">
+        <div>
+          <label for="member">Member *</label>
+          <select id="member" required><option value="">— select —</option></select>
+        </div>
+        <div>
+          <label for="amount">Amount (BDT) *</label>
+          <input id="amount" type="number" step="0.01" min="0.01" required>
+        </div>
+        <div>
+          <label for="purpose">Purpose *</label>
+          <input id="purpose" type="text" required placeholder="Monthly fee, donation…">
+        </div>
+        <div>
+          <label for="payment_method">Method *</label>
+          <select id="payment_method" required>
+            <option value="">— select —</option>
+            <option>Cash</option>
+            <option>Online</option>
+            <option>Bank</option>
+            <option>bKash</option>
+            <option>Nagad</option>
+          </select>
+        </div>
+      </div>
+      <label for="notes">Notes</label>
+      <textarea id="notes" rows="2"></textarea>
+      <button id="saveButton" type="submit">Record payment</button>
+    </form>
+    <div id="message"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Recent payments</h2>
+    <table>
+      <thead><tr><th>Receipt no</th><th>Member</th><th>Amount</th><th>Purpose</th><th>Method</th><th>Date</th></tr></thead>
+      <tbody id="paymentRows"><tr><td colspan="6">Loading...</td></tr></tbody>
+    </table>
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
+<script src="admin.js"></script>
+
+<script>
+(async () => {
+  const result = await checkAdminAccess();
+  if (!result) return;
+  const { admin } = result;
+
+  const rows = document.getElementById("paymentRows");
+  const message = document.getElementById("message");
+  const button = document.getElementById("saveButton");
+  const memberSelect = document.getElementById("member");
+
+  async function loadMembers() {
+    const { data, error } = await supabaseClient
+      .from("members").select("id, member_id, name").eq("active", true).order("name");
+    if (error) { console.error(error); return; }
+    memberSelect.innerHTML = `<option value="">— select —</option>` +
+      data.map(m => `<option value="${m.id}">${m.member_id} — ${m.name}</option>`).join("");
+  }
+
+  async function loadPayments() {
+    const { data, error } = await supabaseClient
+      .from("payments")
+      .select("receipt_no, amount, purpose, payment_method, payment_date, members(member_id, name)")
+      .order("payment_date", { ascending: false })
+      .limit(50);
+    if (error) {
+      console.error(error);
+      rows.innerHTML = `<tr><td colspan="6">${error.message || "Could not load payments."}</td></tr>`;
+      return;
+    }
+    rows.innerHTML = data.length
+      ? data.map(p =>
+          `<tr><td>${p.receipt_no}</td><td>${p.members ? p.members.name : "—"}</td><td>${p.amount}</td><td>${p.purpose}</td><td>${p.payment_method}</td><td>${new Date(p.payment_date).toLocaleDateString()}</td></tr>`
+        ).join("")
+      : `<tr><td colspan="6">No payments yet.</td></tr>`;
+  }
+
+  document.getElementById("paymentForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    button.disabled = true;
+    message.style.color = "#dc2626";
+    message.textContent = "";
+
+    // receipt_no is assigned server-side by next_receipt_no() — never sent from the client
+    const { data: payment, error } = await supabaseClient.from("payments").insert({
+      member_id: memberSelect.value,
+      amount: document.getElementById("amount").value.trim(), // string → numeric(12,2); never a JS float
+      purpose: document.getElementById("purpose").value.trim(),
+      payment_method: document.getElementById("payment_method").value,
+      notes: document.getElementById("notes").value.trim() || null,
+      created_by: admin.id,
+    }).select("id, receipt_no, amount, member_id").single();
+
+    if (error) {
+      console.error(error);
+      message.textContent = error.message || "Could not record payment.";
+      button.disabled = false;
+      return;
+    }
+
+    message.style.color = "#16a34a";
+    message.innerHTML = `Payment recorded — receipt
+      <a href="../receipt.html?no=${encodeURIComponent(payment.receipt_no)}" target="_blank">${payment.receipt_no}</a>`;
+
+    // Notification workflow start (AC4): queue a pending SMS log row; the sms feature (T19)
+    // picks pending rows up and sends via the provider once one is configured.
+    const { error: smsError } = await supabaseClient.from("sms_logs").insert({
+      member_id: payment.member_id,
+      template_key: "payment_received",
+      message_body: `Society of Twelve: payment received. Receipt ${payment.receipt_no}, amount BDT ${payment.amount}.`,
+      status: "pending",
+      sent_by: admin.id,
+    });
+    if (smsError) console.error(smsError); // notification failure never blocks the payment
+
+    e.target.reset();
+    await loadPayments();
+    button.disabled = false;
+  });
+
+  await Promise.all([loadMembers(), loadPayments()]);
+})();
+</script>
+
+</body>
+</html>
