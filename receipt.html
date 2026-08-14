@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Receipt | Society of Twelve</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; color: #17202a; }
+    .sheet { max-width: 640px; margin: 40px auto; background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 40px; }
+    .head { display: flex; align-items: center; gap: 16px; border-bottom: 2px solid #111827; padding-bottom: 20px; }
+    .logo { width: 60px; height: 60px; border-radius: 12px; background: #111827; color: #fff; display: grid; place-items: center; font-weight: bold; font-size: 20px; }
+    .head h1 { margin: 0; font-size: 22px; }
+    .head p { margin: 2px 0 0; color: #64748b; font-size: 14px; }
+    h2 { text-align: center; letter-spacing: 3px; font-size: 16px; color: #64748b; margin: 24px 0; }
+    table { width: 100%; border-collapse: collapse; }
+    td { padding: 10px 0; border-bottom: 1px solid #eef1f4; }
+    td:first-child { color: #64748b; width: 40%; }
+    .amount { font-size: 22px; font-weight: bold; }
+    .foot { margin-top: 30px; display: flex; justify-content: space-between; color: #64748b; font-size: 13px; }
+    .actions { max-width: 640px; margin: 0 auto 40px; text-align: right; }
+    .actions button { padding: 12px 18px; border: 0; border-radius: 10px; background: #111827; color: #fff; font-size: 15px; cursor: pointer; }
+    #error { max-width: 640px; margin: 40px auto; text-align: center; color: #dc2626; }
+    @media print {
+      body { background: #fff; }
+      .sheet { border: 0; margin: 0; max-width: none; }
+      .actions { display: none; }
+    }
+  </style>
+</head>
+
+<body>
+
+<div id="error" hidden></div>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="head">
+    <div class="logo">SOT</div>
+    <div>
+      <h1>Society of Twelve</h1>
+      <p>মাতব্বর টেক, গশ্চি, রাউজান, চট্টগ্রাম · societyoftwelve@gmail.com</p>
+    </div>
+  </div>
+  <h2>PAYMENT RECEIPT</h2>
+  <table>
+    <tr><td>Receipt no</td><td id="receipt_no"></td></tr>
+    <tr><td>Date</td><td id="payment_date"></td></tr>
+    <tr><td>Member</td><td id="member_name"></td></tr>
+    <tr><td>Member ID</td><td id="member_id"></td></tr>
+    <tr><td>House</td><td id="house_name"></td></tr>
+    <tr><td>Purpose</td><td id="purpose"></td></tr>
+    <tr><td>Method</td><td id="payment_method"></td></tr>
+    <tr><td>Amount</td><td class="amount" id="amount"></td></tr>
+    <tr><td>Recorded by</td><td id="recorded_by"></td></tr>
+  </table>
+  <div class="foot">
+    <span>This is a system-generated receipt.</span>
+    <span>Society of Twelve</span>
+  </div>
+</div>
+
+<div class="actions">
+  <button onclick="window.print()" id="printButton" hidden>Print / Save as PDF</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+(async () => {
+  const { createClient } = window.supabase;
+  const client = createClient(window.SOT_CONFIG.SUPABASE_URL, window.SOT_CONFIG.SUPABASE_ANON_KEY);
+  const errorBox = document.getElementById("error");
+  const no = new URLSearchParams(location.search).get("no");
+
+  function fail(text) { errorBox.hidden = false; errorBox.textContent = text; }
+
+  if (!no) { fail("No receipt number given."); return; }
+
+  // receipt_self is scoped server-side: active admins or the owning member only
+  const { data, error } = await client
+    .from("receipt_self").select("*").eq("receipt_no", no).maybeSingle();
+  if (error) { console.error(error); fail(error.message || "Could not load the receipt."); return; }
+  if (!data) { fail("Receipt not found, or you are not signed in with an account allowed to view it."); return; }
+
+  for (const key of ["receipt_no", "member_name", "member_id", "house_name", "purpose", "payment_method", "recorded_by"]) {
+    document.getElementById(key).textContent = data[key] || "—";
+  }
+  document.getElementById("amount").textContent = "BDT " + data.amount;
+  document.getElementById("payment_date").textContent = new Date(data.payment_date).toLocaleString();
+  document.getElementById("sheet").hidden = false;
+  document.getElementById("printButton").hidden = false;
+})();
+</script>
+
+</body>
+</html>

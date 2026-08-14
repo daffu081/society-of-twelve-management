@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T06
 feature: receipts
-status: todo
+status: done
 ---
 
 # T06 — Branded receipts
@@ -15,9 +15,9 @@ Generate a professional branded receipt for every payment (spec §10) — logo, 
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC1 | Branded receipt generated | ⬜ |
-| AC2 | Receipt reachable from profile & history | ⬜ |
-| AC3 | Email a receipt | ⬜ |
+| AC1 | Branded receipt generated | ✅ |
+| AC2 | Receipt reachable from profile & history | ✅ |
+| AC3 | Email a receipt | ✅ |
 
 ## Implementation approach
 1. Build a print-friendly receipt template populated from a payment

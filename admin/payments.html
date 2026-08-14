@@ -75,8 +75,8 @@
   <div class="panel">
     <h2>Recent payments</h2>
     <table>
-      <thead><tr><th>Receipt no</th><th>Member</th><th>Amount</th><th>Purpose</th><th>Method</th><th>Date</th></tr></thead>
-      <tbody id="paymentRows"><tr><td colspan="6">Loading...</td></tr></tbody>
+      <thead><tr><th>Receipt no</th><th>Member</th><th>Amount</th><th>Purpose</th><th>Method</th><th>Date</th><th></th></tr></thead>
+      <tbody id="paymentRows"><tr><td colspan="7">Loading...</td></tr></tbody>
     </table>
   </div>
 
@@ -113,15 +113,35 @@
       .limit(50);
     if (error) {
       console.error(error);
-      rows.innerHTML = `<tr><td colspan="6">${error.message || "Could not load payments."}</td></tr>`;
+      rows.innerHTML = `<tr><td colspan="7">${error.message || "Could not load payments."}</td></tr>`;
       return;
     }
     rows.innerHTML = data.length
       ? data.map(p =>
-          `<tr><td>${p.receipt_no}</td><td>${p.members ? p.members.name : "—"}</td><td>${p.amount}</td><td>${p.purpose}</td><td>${p.payment_method}</td><td>${new Date(p.payment_date).toLocaleDateString()}</td></tr>`
+          `<tr><td><a href="../receipt.html?no=${encodeURIComponent(p.receipt_no)}" target="_blank">${p.receipt_no}</a></td><td>${p.members ? p.members.name : "—"}</td><td>${p.amount}</td><td>${p.purpose}</td><td>${p.payment_method}</td><td>${new Date(p.payment_date).toLocaleDateString()}</td><td><button type="button" class="email" data-no="${p.receipt_no}" style="margin:0;padding:8px 12px;font-size:13px">Email receipt</button></td></tr>`
         ).join("")
-      : `<tr><td colspan="6">No payments yet.</td></tr>`;
+      : `<tr><td colspan="7">No payments yet.</td></tr>`;
   }
+
+  // Email the receipt to the member (receipts AC3). PDFs are never sent over SMS (BR5).
+  rows.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button.email");
+    if (!btn) return;
+    btn.disabled = true;
+    message.style.color = "#dc2626";
+    message.textContent = "";
+    const { data, error } = await supabaseClient.functions.invoke("send-receipt-email", {
+      body: { receipt_no: btn.dataset.no },
+    });
+    if (error || data?.error) {
+      console.error(error || data.error);
+      message.textContent = (data?.error) || error.message || "Could not email the receipt.";
+    } else {
+      message.style.color = "#16a34a";
+      message.textContent = `Receipt ${btn.dataset.no} emailed to ${data.sent_to}.`;
+    }
+    btn.disabled = false;
+  });
 
   document.getElementById("paymentForm").addEventListener("submit", async (e) => {
     e.preventDefault();

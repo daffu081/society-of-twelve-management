@@ -37,6 +37,16 @@ features:
     ac_count: 3
     contract_version: 1
     depends_on: [admin-access]
+  receipts:
+    status: done
+    ac_count: 3
+    contract_version: 1
+    depends_on: [payments, member-profile]
+  due-payments:
+    status: done
+    ac_count: 2
+    contract_version: 1
+    depends_on: [profession-fee, payments, sms]
   payments:
     status: in_progress
     ac_count: 5
