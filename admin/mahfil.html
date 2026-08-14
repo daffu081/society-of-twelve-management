@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mahfil | Society of Twelve</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; color: #17202a; }
+    header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 18px 5%; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo { width: 45px; height: 45px; border-radius: 10px; background: #111827; color: #fff; display: grid; place-items: center; font-weight: bold; }
+    main { padding: 35px 5%; max-width: 900px; margin: auto; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 25px; margin-bottom: 25px; }
+    label { display: block; margin: 12px 0 6px; font-weight: 600; }
+    input, select, textarea { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 15px; font-family: inherit; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+    button { margin-top: 18px; padding: 12px 18px; border: 0; border-radius: 10px; background: #111827; color: #fff; font-size: 15px; cursor: pointer; }
+    button.secondary { background: #e5e7eb; color: #111827; }
+    button.small { margin: 0; padding: 8px 12px; font-size: 13px; }
+    button:disabled { opacity: .6; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eef1f4; }
+    #message { margin-top: 12px; }
+    a.back { color: #64748b; text-decoration: none; }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">SOT</div>
+    <div><strong>Society of Twelve</strong> — Mahfil</div>
+  </div>
+  <a class="back" href="dashboard.html">&larr; Dashboard</a>
+</header>
+
+<main>
+
+  <div class="panel">
+    <h2 id="formTitle">Add a mahfil</h2>
+    <form id="mahfilForm">
+      <input id="id" type="hidden">
+      <div class="grid">
+        <div>
+          <label for="title">Title *</label>
+          <input id="title" type="text" required>
+        </div>
+        <div>
+          <label for="status">Status</label>
+          <select id="status">
+            <option value="running">Running</option>
+            <option value="previous">Previous</option>
+          </select>
+        </div>
+        <div>
+          <label for="event_date">Date</label>
+          <input id="event_date" type="date">
+        </div>
+        <div>
+          <label for="event_time">Time</label>
+          <input id="event_time" type="time">
+        </div>
+        <div>
+          <label for="venue">Venue</label>
+          <input id="venue" type="text">
+        </div>
+        <div>
+          <label for="cover_url">Image URL</label>
+          <input id="cover_url" type="url" placeholder="https://…">
+        </div>
+      </div>
+      <label for="description">Description</label>
+      <textarea id="description" rows="3"></textarea>
+      <label style="display:flex;align-items:center;gap:8px;font-weight:400">
+        <input id="published" type="checkbox" style="width:auto"> Published (visible on the public mahfil page)
+      </label>
+      <button id="saveButton" type="submit">Save mahfil</button>
+      <button id="cancelButton" type="button" class="secondary" style="display:none">Cancel edit</button>
+    </form>
+    <div id="message"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Mahfils</h2>
+    <table>
+      <thead><tr><th>Title</th><th>Date</th><th>Venue</th><th>Status</th><th></th></tr></thead>
+      <tbody id="mahfilRows"><tr><td colspan="5">Loading...</td></tr></tbody>
+    </table>
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
+<script src="admin.js"></script>
+
+<script>
+(async () => {
+  const result = await checkAdminAccess();
+  if (!result) return;
+
+  const rows = document.getElementById("mahfilRows");
+  const message = document.getElementById("message");
+  const form = document.getElementById("mahfilForm");
+  const cancelButton = document.getElementById("cancelButton");
+  let mahfils = [];
+
+  function say(ok, text) {
+    message.style.color = ok ? "#16a34a" : "#dc2626";
+    message.textContent = text;
+  }
+
+  function resetForm() {
+    form.reset();
+    document.getElementById("id").value = "";
+    document.getElementById("formTitle").textContent = "Add a mahfil";
+    cancelButton.style.display = "none";
+  }
+  cancelButton.addEventListener("click", resetForm);
+
+  async function loadMahfils() {
+    const { data, error } = await supabaseClient
+      .from("mahfils").select("*").order("created_at", { ascending: false });
+    if (error) {
+      console.error(error);
+      rows.innerHTML = `<tr><td colspan="5">${error.message || "Could not load mahfils."}</td></tr>`;
+      return;
+    }
+    mahfils = data;
+    rows.innerHTML = data.length
+      ? data.map(m => `<tr data-id="${m.id}">
+          <td>${m.title}</td><td>${m.event_date || "—"}</td><td>${m.venue || "—"}</td>
+          <td>${m.published ? "Published" : "Draft"} · ${m.status}</td>
+          <td><button type="button" class="small" data-act="edit">Edit</button></td>
+        </tr>`).join("")
+      : `<tr><td colspan="5">No mahfils yet.</td></tr>`;
+  }
+
+  rows.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-act='edit']");
+    if (!btn) return;
+    const m = mahfils.find(x => x.id === btn.closest("tr").dataset.id);
+    if (!m) return;
+    document.getElementById("id").value = m.id;
+    document.getElementById("formTitle").textContent = "Edit mahfil";
+    for (const k of ["title", "status", "event_date", "event_time", "venue", "cover_url", "description"]) {
+      document.getElementById(k).value = m[k] ?? "";
+    }
+    document.getElementById("published").checked = !!m.published;
+    cancelButton.style.display = "inline-block";
+    window.scrollTo(0, 0);
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const val = (id) => document.getElementById(id).value.trim();
+    const record = {
+      title: val("title"),
+      status: document.getElementById("status").value,
+      event_date: val("event_date") || null,
+      event_time: val("event_time") || null,
+      venue: val("venue") || null,
+      cover_url: val("cover_url") || null,
+      description: val("description") || null,
+      published: document.getElementById("published").checked,
+    };
+    const editingId = document.getElementById("id").value;
+    const { error } = editingId
+      ? await supabaseClient.from("mahfils").update(record).eq("id", editingId)
+      : await supabaseClient.from("mahfils").insert(record);
+    if (error) { console.error(error); say(false, error.message || "Could not save the mahfil."); }
+    else { say(true, editingId ? "Mahfil updated." : "Mahfil saved."); resetForm(); await loadMahfils(); }
+  });
+
+  await loadMahfils();
+})();
+</script>
+
+</body>
+</html>
