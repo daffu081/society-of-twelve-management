@@ -61,6 +61,12 @@ begin
 end;
 $$;
 alter table public.notices alter column ref_no set default public.next_notice_ref_no();
+-- projects (T11): full detail + finance fields; images are URLs until the storage split (T25)
+alter table public.projects add column if not exists image_urls text[];
+alter table public.projects add column if not exists start_date date;
+alter table public.projects add column if not exists end_date date;
+alter table public.projects add column if not exists budget numeric(12,2);
+alter table public.projects add column if not exists amount_spent numeric(12,2);
 create table if not exists public.payments (
  id uuid primary key default gen_random_uuid(), receipt_no text unique not null, member_id uuid references public.members(id),
  amount numeric(12,2) not null, purpose text not null, payment_method text not null, payment_date timestamptz default now(), notes text, created_by uuid, created_at timestamptz default now()

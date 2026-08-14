@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Projects | Society of Twelve</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .proj { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+    .proj img { max-width: 100%; border-radius: 10px; margin-top: 10px; }
+    .proj .dates { color: #64748b; font-size: 13px; }
+  </style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="logo">SOT</div><div><h1>Projects</h1><p>Society of Twelve</p></div></div>
+  <nav><a href="index.html">← Home</a></nav>
+</header>
+<main>
+  <section>
+    <h2>Running projects</h2>
+    <div id="running"><p>Loading…</p></div>
+  </section>
+  <section>
+    <h2>Previous projects</h2>
+    <div id="previous"><p>Loading…</p></div>
+  </section>
+</main>
+<footer><strong>Society of Twelve</strong><div>© <span id="year"></span> Society of Twelve — All Rights Reserved.</div></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+  const { createClient } = window.supabase;
+  const client = createClient(window.SOT_CONFIG.SUPABASE_URL, window.SOT_CONFIG.SUPABASE_ANON_KEY);
+
+  const card = (p) => `
+    <article class="proj">
+      <h3>${p.title}</h3>
+      <div class="dates">${p.start_date || ""}${p.end_date ? " → " + p.end_date : ""}</div>
+      ${p.description ? `<p>${p.description}</p>` : ""}
+      ${(p.image_urls || []).map(u => `<img src="${u}" alt="${p.title}">`).join("")}
+    </article>`;
+
+  (async () => {
+    const { data, error } = await client
+      .from("projects")
+      .select("title, description, status, start_date, end_date, image_urls")
+      .order("created_at", { ascending: false });
+    const running = document.getElementById("running");
+    const previous = document.getElementById("previous");
+    if (error) {
+      console.error(error);
+      running.innerHTML = previous.innerHTML = `<p>Could not load projects.</p>`;
+      return;
+    }
+    const r = data.filter(p => p.status === "running");
+    const v = data.filter(p => p.status !== "running");
+    running.innerHTML = r.length ? r.map(card).join("") : `<p>No running projects.</p>`;
+    previous.innerHTML = v.length ? v.map(card).join("") : `<p>No previous projects.</p>`;
+  })();
+</script>
+</body>
+</html>
