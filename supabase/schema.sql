@@ -13,6 +13,11 @@ alter table public.members add column if not exists blood_group text;
 create sequence if not exists public.members_member_id_seq;
 alter table public.members
   alter column member_id set default 'SOT' || lpad(nextval('public.members_member_id_seq')::text, 4, '0');
+-- ponytail: roster search/filter runs client-side over a small member base; these
+-- indexes only matter if it grows into server-side filtering. Cheap to keep.
+create index if not exists members_active_idx on public.members (active);
+create index if not exists members_profession_idx on public.members (profession);
+create index if not exists members_name_idx on public.members (name);
 create table if not exists public.payments (
  id uuid primary key default gen_random_uuid(), receipt_no text unique not null, member_id uuid references public.members(id),
  amount numeric(12,2) not null, purpose text not null, payment_method text not null, payment_date timestamptz default now(), notes text, created_by uuid, created_at timestamptz default now()
