@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T08
 feature: finance
-status: todo
+status: done
 ---
 
 # T08 — Finance income & expense
@@ -15,9 +15,9 @@ Admin-controlled income and expense management (spec §17). Income is recorded a
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC4 | Record income by source | ⬜ |
-| AC5 | Record expense | ⬜ |
-| AC6 | Finance dashboard totals | ⬜ |
+| AC4 | Record income by source | ✅ |
+| AC5 | Record expense | ✅ |
+| AC6 | Finance dashboard totals | ✅ |
 
 ## Implementation approach
 1. Add income and expense tables with the defined source/category sets

@@ -19,12 +19,76 @@ create or replace function public.is_active_admin() returns boolean
   );
 $$;
 
+-- Capability check (executive-admins permission matrix): super_admin has everything;
+-- an executive admin needs the capability flag in admins.permissions jsonb (ADR-001).
+-- Keys follow <area>_read / <area>_write plus extra actions (notices_publish, sms_send,
+-- sms_template_edit, birthday_manage, reports_export) — the catalog lives in
+-- admin/executives.html.
+create or replace function public.has_permission(cap text) returns boolean
+  language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.admins a
+    where a.auth_user_id = auth.uid() and a.active = true
+      and (a.role = 'super_admin' or coalesce((a.permissions ->> cap)::boolean, false))
+  );
+$$;
+
+-- Is the current auth user an active Super Admin?
+create or replace function public.is_super_admin() returns boolean
+  language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.admins a
+    where a.auth_user_id = auth.uid() and a.active = true and a.role = 'super_admin'
+  );
+$$;
+
+-- Admins table (executive-admins): each admin reads their own row (the login gate
+-- needs it); only Super Admins manage admin rows. Enforced here, not in menus (BR5).
+alter table public.admins enable row level security;
+drop policy if exists admins_self_read on public.admins;
+create policy admins_self_read on public.admins
+  for select using (auth_user_id = auth.uid());
+drop policy if exists admins_super_all on public.admins;
+create policy admins_super_all on public.admins
+  for all using (public.is_super_admin()) with check (public.is_super_admin());
+
+-- Never allow the last active Super Admin to be removed, demoted or deactivated (AC5/BR6).
+create or replace function public.admins_protect_last_super() returns trigger
+  language plpgsql security definer set search_path = public as $$
+begin
+  if old.role = 'super_admin' and old.active = true
+     and (tg_op = 'DELETE' or new.role <> 'super_admin' or new.active = false) then
+    if not exists (
+      select 1 from public.admins
+      where role = 'super_admin' and active = true and id <> old.id
+    ) then
+      raise exception 'Cannot remove, demote or deactivate the last active Super Admin';
+    end if;
+  end if;
+  if tg_op = 'DELETE' then return old; end if;
+  return new;
+end;
+$$;
+drop trigger if exists admins_protect_last_super on public.admins;
+create trigger admins_protect_last_super
+  before update or delete on public.admins
+  for each row execute function public.admins_protect_last_super();
+
 alter table public.members enable row level security;
 
--- Admins: full access. Anon has no policy → RLS denies it entirely.
+-- Permission-keyed access (BR5: enforced server-side, not menu-hiding).
+-- Anon has no policy → RLS denies it entirely.
 drop policy if exists members_admin_all on public.members;
-create policy members_admin_all on public.members
-  for all using (public.is_active_admin()) with check (public.is_active_admin());
+drop policy if exists members_perm_read on public.members;
+create policy members_perm_read on public.members
+  for select using (public.has_permission('members_read'));
+drop policy if exists members_perm_insert on public.members;
+create policy members_perm_insert on public.members
+  for insert with check (public.has_permission('members_write'));
+drop policy if exists members_perm_update on public.members;
+create policy members_perm_update on public.members
+  for update using (public.has_permission('members_write'))
+  with check (public.has_permission('members_write'));
 
 -- A member may UPDATE their own row (matched by email). No SELECT policy for
 -- members on the base table: they read through members_self only, so the
@@ -95,8 +159,12 @@ create trigger members_guard_self_edit
 -- through the payments_self view; anon gets nothing.
 alter table public.payments enable row level security;
 drop policy if exists payments_admin_all on public.payments;
-create policy payments_admin_all on public.payments
-  for all using (public.is_active_admin()) with check (public.is_active_admin());
+drop policy if exists payments_perm_read on public.payments;
+create policy payments_perm_read on public.payments
+  for select using (public.has_permission('payments_read'));
+drop policy if exists payments_perm_insert on public.payments;
+create policy payments_perm_insert on public.payments
+  for insert with check (public.has_permission('payments_write'));
 
 -- Member-facing view: own payment history, matched by the member's email (AC5).
 -- security_definer (default) bypasses base-table RLS; the WHERE clause isolates
@@ -147,11 +215,49 @@ create or replace view public.member_dues as
   where m.active = true and public.is_active_admin();
 grant select on public.member_dues to authenticated;
 
--- Fee categories (profession-fee): admins manage; no anon access.
+-- Finance (finance feature): never public (BR6); executives need the explicit
+-- 'finance' permission (BR7). super_admin always passes has_permission().
+alter table public.income enable row level security;
+alter table public.expenses enable row level security;
+drop policy if exists income_finance_all on public.income;
+drop policy if exists income_finance_read on public.income;
+create policy income_finance_read on public.income
+  for select using (public.has_permission('finance_read'));
+drop policy if exists income_finance_write on public.income;
+create policy income_finance_write on public.income
+  for insert with check (public.has_permission('finance_write'));
+drop policy if exists expenses_finance_all on public.expenses;
+drop policy if exists expenses_finance_read on public.expenses;
+create policy expenses_finance_read on public.expenses
+  for select using (public.has_permission('finance_read'));
+drop policy if exists expenses_finance_write on public.expenses;
+create policy expenses_finance_write on public.expenses
+  for insert with check (public.has_permission('finance_write'));
+
+-- Cumulative totals computed in SQL (never JS floats — ADR-002); rows only for
+-- finance-permitted admins.
+create or replace view public.finance_totals as
+  select (select coalesce(sum(amount), 0) from public.income)   as total_income,
+         (select coalesce(sum(amount), 0) from public.expenses) as total_expense,
+         (select coalesce(sum(amount), 0) from public.income)
+       - (select coalesce(sum(amount), 0) from public.expenses) as balance
+  where public.has_permission('finance_read');
+grant select on public.finance_totals to authenticated;
+
+-- Fee categories (profession-fee): any active admin reads (the member form needs
+-- them); editing fees is a settings capability. No anon access.
 alter table public.fee_categories enable row level security;
 drop policy if exists fee_categories_admin_all on public.fee_categories;
-create policy fee_categories_admin_all on public.fee_categories
-  for all using (public.is_active_admin()) with check (public.is_active_admin());
+drop policy if exists fee_categories_admin_read on public.fee_categories;
+create policy fee_categories_admin_read on public.fee_categories
+  for select using (public.is_active_admin());
+drop policy if exists fee_categories_settings_write on public.fee_categories;
+create policy fee_categories_settings_write on public.fee_categories
+  for insert with check (public.has_permission('settings_write'));
+drop policy if exists fee_categories_settings_update on public.fee_categories;
+create policy fee_categories_settings_update on public.fee_categories
+  for update using (public.has_permission('settings_write'))
+  with check (public.has_permission('settings_write'));
 
 create or replace view public.members_public as
   select name, profession, short_bio, photo_url

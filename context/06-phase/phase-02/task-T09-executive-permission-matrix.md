@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T09
 feature: executive-admins
-status: todo
+status: done
 ---
 
 # T09 — Executive permission matrix
@@ -15,8 +15,8 @@ Build the Executive Management screen (spec §16) where the Super Admin assigns 
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC4 | Assign granular permissions | ⬜ |
-| AC5 | Protect the last Super Admin | ⬜ |
+| AC4 | Assign granular permissions | ✅ |
+| AC5 | Protect the last Super Admin | ✅ |
 
 ## Implementation approach
 1. Add role/permission tables and a permission-key catalog

@@ -28,6 +28,9 @@ create table if not exists public.fee_categories (
 );
 -- receipt numbers (payments feature): SOT-YYYYMM-0001, resetting each month (BR5).
 -- A per-month counter row updated atomically — no client race, numbers never reused.
+-- finance (T08): recorded-by on money movements (BR5)
+alter table public.income add column if not exists created_by uuid;
+alter table public.expenses add column if not exists created_by uuid;
 create table if not exists public.receipt_counters (month text primary key, counter integer not null);
 create or replace function public.next_receipt_no() returns text
   language plpgsql volatile security definer set search_path = public as $$

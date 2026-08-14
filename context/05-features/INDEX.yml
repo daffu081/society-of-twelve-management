@@ -53,8 +53,8 @@ features:
     contract_version: 1
     depends_on: [admin-access, members]
   finance:
-    status: planned
-    ac_count: 3
+    status: in_progress
+    ac_count: 6
     contract_version: 1
     depends_on: [admin-access, payments]
   notices:
@@ -73,8 +73,8 @@ features:
     contract_version: 1
     depends_on: [admin-access]
   executive-admins:
-    status: planned
-    ac_count: 3
+    status: in_progress
+    ac_count: 5
     contract_version: 1
     depends_on: [admin-access]
   sms:
