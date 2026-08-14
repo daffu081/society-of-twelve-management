@@ -5,4 +5,7 @@
 window.SOT_CONFIG = {
   SUPABASE_URL: "https://YOUR-PROJECT-ref.supabase.co", // replace with the project URL
   SUPABASE_ANON_KEY: "YOUR-SUPABASE-ANON-KEY",          // anon/public key only — never the service-role key
+  // public storage bucket for photos/images (safe to expose). Private identity
+  // documents live in a separate non-public bucket — see supabase/storage.md.
+  PUBLIC_BUCKET: "public-media",
 };

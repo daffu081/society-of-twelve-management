@@ -19,7 +19,7 @@ features:
     depends_on: [admin-access]
   _cross-cutting:
     status: done
-    ac_count: 1
+    ac_count: 4
     contract_version: 1
     depends_on: []
   members:

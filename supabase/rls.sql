@@ -582,3 +582,34 @@ begin
                     for each row execute function public.audit_capture()', t);
   end loop;
 end $$;
+
+-- =====================================================================
+-- T25 hardening sweep: RLS on every remaining table (AC2 — no table is
+-- reachable by the anon key without a policy). Counter tables are touched
+-- ONLY by security-definer functions (next_receipt_no/next_notice_ref_no),
+-- so enabling RLS with no client policy denies all direct access while the
+-- functions keep working.
+-- =====================================================================
+alter table public.receipt_counters enable row level security;  -- no policy: client-deny
+alter table public.notice_counters enable row level security;   -- no policy: client-deny
+
+-- birthday_logs: written only by the birthday-cron (service role bypasses RLS);
+-- readable for the birthday delivery report with sms_read.
+alter table public.birthday_logs enable row level security;
+drop policy if exists birthday_logs_perm_read on public.birthday_logs;
+create policy birthday_logs_perm_read on public.birthday_logs
+  for select using (public.has_permission('sms_read'));
+
+-- Access-control coverage summary (AC2/AC3) — every protected table has RLS:
+--   members          admin keyed; members read own via members_self; anon none
+--   payments/income/expenses  keyed; members read own payments via payments_self; anon none
+--   admins           self-read + super-manage; last-super guard
+--   fee_categories/notices/projects/mahfils/committee_members/founding_members/awards/rules
+--                    keyed writes; public reads only the safe/published/visible rows
+--   sms_templates/sms_logs/birthday_logs   keyed; no public access
+--   bin/audit_log/rule_versions            Super-Admin scoped
+--   *_counters       function-only (RLS on, no client policy)
+-- Safe public surfaces (AC3 — no payment/finance/NID/Birth-Reg/Passport ever returned):
+--   members_public (directory), notices/projects/mahfils/committee/founding/awards/rules
+--   public reads — none of these views/policies expose a private identity, contact,
+--   payment or finance column.
