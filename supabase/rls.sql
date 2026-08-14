@@ -363,3 +363,17 @@ drop policy if exists committee_perm_update on public.committee_members;
 create policy committee_perm_update on public.committee_members
   for update using (public.has_permission('committee_write'))
   with check (public.has_permission('committee_write'));
+
+-- Founding members (founding-members feature): public reads all; writes need committee_write
+-- (same custodians as the committee roster — no separate key in the BR4 catalog).
+alter table public.founding_members enable row level security;
+drop policy if exists founding_public_read on public.founding_members;
+create policy founding_public_read on public.founding_members
+  for select using (true);
+drop policy if exists founding_perm_insert on public.founding_members;
+create policy founding_perm_insert on public.founding_members
+  for insert with check (public.has_permission('committee_write'));
+drop policy if exists founding_perm_update on public.founding_members;
+create policy founding_perm_update on public.founding_members
+  for update using (public.has_permission('committee_write'))
+  with check (public.has_permission('committee_write'));

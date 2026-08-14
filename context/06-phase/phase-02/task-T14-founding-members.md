@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T14
 feature: founding-members
-status: todo
+status: done
 ---
 
 # T14 — Founding members
@@ -15,7 +15,7 @@ Founding-member records (spec §25): photo, name, historical role and short biog
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC1 | Manage founding members | ⬜ |
+| AC1 | Manage founding members | ✅ |
 
 ## Implementation approach
 1. Add a founding_members table

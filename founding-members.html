@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Founding Members | Society of Twelve</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .fm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; }
+    .fm-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; text-align: center; }
+    .fm-card img { width: 88px; height: 88px; border-radius: 50%; object-fit: cover; background: #eef1f4; }
+    .fm-card .avatar { width: 88px; height: 88px; border-radius: 50%; margin: 0 auto; background: #111827; color: #fff; display: grid; place-items: center; font-size: 28px; font-weight: bold; }
+    .fm-card h3 { margin: 12px 0 2px; }
+    .fm-card .role { color: #111827; font-weight: 600; margin: 0; }
+    .fm-card .bio { font-size: 14px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="logo">SOT</div><div><h1>Founding Members</h1><p>Society of Twelve</p></div></div>
+  <nav><a href="index.html">← Home</a></nav>
+</header>
+<main>
+  <section>
+    <h2>Our founders</h2>
+    <div id="grid" class="fm-grid"><p>Loading…</p></div>
+  </section>
+</main>
+<footer><strong>Society of Twelve</strong><div>© <span id="year"></span> Society of Twelve — All Rights Reserved.</div></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+  const { createClient } = window.supabase;
+  const client = createClient(window.SOT_CONFIG.SUPABASE_URL, window.SOT_CONFIG.SUPABASE_ANON_KEY);
+  const grid = document.getElementById("grid");
+
+  (async () => {
+    const { data, error } = await client
+      .from("founding_members")
+      .select("name, historical_role, short_bio, photo_url, display_order")
+      .order("display_order").order("name");
+    if (error) {
+      console.error(error);
+      grid.innerHTML = `<p>${error.message || "Could not load founding members."}</p>`;
+      return;
+    }
+    if (!data.length) { grid.innerHTML = `<p>No founding members listed yet.</p>`; return; }
+    grid.innerHTML = data.map(f => {
+      const avatar = f.photo_url
+        ? `<img src="${f.photo_url}" alt="${f.name}">`
+        : `<div class="avatar">${(f.name || "?").trim().charAt(0).toUpperCase()}</div>`;
+      return `<article class="fm-card">
+        ${avatar}
+        <h3>${f.name}</h3>
+        ${f.historical_role ? `<p class="role">${f.historical_role}</p>` : ""}
+        ${f.short_bio ? `<p class="bio">${f.short_bio}</p>` : ""}
+      </article>`;
+    }).join("");
+  })();
+</script>
+</body>
+</html>
