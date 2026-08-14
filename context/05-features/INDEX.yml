@@ -63,8 +63,8 @@ features:
     contract_version: 1
     depends_on: [admin-access]
   projects:
-    status: planned
-    ac_count: 2
+    status: in_progress
+    ac_count: 4
     contract_version: 1
     depends_on: [admin-access]
   mahfil:

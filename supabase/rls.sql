@@ -280,6 +280,37 @@ create trigger notices_guard_publish
   before update on public.notices
   for each row execute function public.notices_guard_publish();
 
+-- Projects (projects feature): public reads all (running + previous showcase);
+-- writes need projects_write. Soft-delete goes through bin (ADR-003).
+alter table public.projects enable row level security;
+drop policy if exists projects_public_read on public.projects;
+create policy projects_public_read on public.projects
+  for select using (true);
+drop policy if exists projects_perm_insert on public.projects;
+create policy projects_perm_insert on public.projects
+  for insert with check (public.has_permission('projects_write'));
+drop policy if exists projects_perm_update on public.projects;
+create policy projects_perm_update on public.projects
+  for update using (public.has_permission('projects_write'))
+  with check (public.has_permission('projects_write'));
+drop policy if exists projects_perm_delete on public.projects;
+create policy projects_perm_delete on public.projects
+  for delete using (public.has_permission('projects_write'));
+
+-- Bin (ADR-003): area-permitted admins insert snapshots when soft-deleting;
+-- only a Super Admin reads, restores (delete-after-restore) or purges (BR5).
+-- Full bin lifecycle/cleanup is the bin feature (T24).
+alter table public.bin enable row level security;
+drop policy if exists bin_admin_insert on public.bin;
+create policy bin_admin_insert on public.bin
+  for insert with check (public.is_active_admin());
+drop policy if exists bin_super_read on public.bin;
+create policy bin_super_read on public.bin
+  for select using (public.is_super_admin());
+drop policy if exists bin_super_delete on public.bin;
+create policy bin_super_delete on public.bin
+  for delete using (public.is_super_admin());
+
 -- Fee categories (profession-fee): any active admin reads (the member form needs
 -- them); editing fees is a settings capability. No anon access.
 alter table public.fee_categories enable row level security;

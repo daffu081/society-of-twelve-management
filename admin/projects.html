@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Projects | Society of Twelve</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; color: #17202a; }
+    header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 18px 5%; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo { width: 45px; height: 45px; border-radius: 10px; background: #111827; color: #fff; display: grid; place-items: center; font-weight: bold; }
+    main { padding: 35px 5%; max-width: 900px; margin: auto; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 25px; margin-bottom: 25px; }
+    label { display: block; margin: 12px 0 6px; font-weight: 600; }
+    input, select, textarea { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 15px; font-family: inherit; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+    button { margin-top: 18px; padding: 12px 18px; border: 0; border-radius: 10px; background: #111827; color: #fff; font-size: 15px; cursor: pointer; }
+    button.secondary { background: #e5e7eb; color: #111827; }
+    button.small { margin: 0; padding: 8px 12px; font-size: 13px; }
+    button.danger { background: #dc2626; }
+    button:disabled { opacity: .6; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eef1f4; }
+    #message { margin-top: 12px; }
+    a.back { color: #64748b; text-decoration: none; }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">SOT</div>
+    <div><strong>Society of Twelve</strong> — Projects</div>
+  </div>
+  <a class="back" href="dashboard.html">&larr; Dashboard</a>
+</header>
+
+<main>
+
+  <div class="panel">
+    <h2 id="formTitle">Add a project</h2>
+    <form id="projectForm">
+      <input id="id" type="hidden">
+      <div class="grid">
+        <div>
+          <label for="title">Title *</label>
+          <input id="title" type="text" required>
+        </div>
+        <div>
+          <label for="status">Status</label>
+          <select id="status">
+            <option value="running">Running</option>
+            <option value="previous">Previous</option>
+          </select>
+        </div>
+        <div>
+          <label for="start_date">Start date</label>
+          <input id="start_date" type="date">
+        </div>
+        <div>
+          <label for="end_date">End date</label>
+          <input id="end_date" type="date">
+        </div>
+        <div>
+          <label for="budget">Budget (BDT)</label>
+          <input id="budget" type="number" step="0.01" min="0">
+        </div>
+        <div>
+          <label for="amount_spent">Spent (BDT)</label>
+          <input id="amount_spent" type="number" step="0.01" min="0">
+        </div>
+      </div>
+      <label for="description">Description</label>
+      <textarea id="description" rows="3"></textarea>
+      <label for="image_urls">Image URLs (comma-separated)</label>
+      <input id="image_urls" type="text" placeholder="https://…, https://…">
+      <button id="saveButton" type="submit">Save project</button>
+      <button id="cancelButton" type="button" class="secondary" style="display:none">Cancel edit</button>
+    </form>
+    <div id="message"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Projects</h2>
+    <table>
+      <thead><tr><th>Title</th><th>Status</th><th>Dates</th><th>Budget / Spent</th><th></th></tr></thead>
+      <tbody id="projectRows"><tr><td colspan="5">Loading...</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="panel" id="binPanel" hidden>
+    <h2>🗑 Deleted projects (Bin)</h2>
+    <p style="color:#64748b;font-size:14px">Super Admin only. Items expire 30 days after deletion.</p>
+    <table>
+      <thead><tr><th>Title</th><th>Deleted</th><th>Expires</th><th></th></tr></thead>
+      <tbody id="binRows"><tr><td colspan="4">Loading...</td></tr></tbody>
+    </table>
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
+<script src="admin.js"></script>
+
+<script>
+(async () => {
+  const result = await checkAdminAccess();
+  if (!result) return;
+  const { admin } = result;
+  const isSuper = admin.role === "super_admin";
+
+  const rows = document.getElementById("projectRows");
+  const binRows = document.getElementById("binRows");
+  const message = document.getElementById("message");
+  const form = document.getElementById("projectForm");
+  const cancelButton = document.getElementById("cancelButton");
+  let projects = [];
+  let binItems = [];
+
+  function say(ok, text) {
+    message.style.color = ok ? "#16a34a" : "#dc2626";
+    message.textContent = text;
+  }
+  const csv = (v) => v.split(",").map(s => s.trim()).filter(Boolean);
+
+  function resetForm() {
+    form.reset();
+    document.getElementById("id").value = "";
+    document.getElementById("formTitle").textContent = "Add a project";
+    cancelButton.style.display = "none";
+  }
+  cancelButton.addEventListener("click", resetForm);
+
+  async function loadProjects() {
+    const { data, error } = await supabaseClient
+      .from("projects").select("*").order("created_at", { ascending: false });
+    if (error) {
+      console.error(error);
+      rows.innerHTML = `<tr><td colspan="5">${error.message || "Could not load projects."}</td></tr>`;
+      return;
+    }
+    projects = data;
+    rows.innerHTML = data.length
+      ? data.map(p => `<tr data-id="${p.id}">
+          <td>${p.title}</td><td>${p.status}</td>
+          <td>${p.start_date || "—"} → ${p.end_date || "—"}</td>
+          <td>${p.budget ?? "—"} / ${p.amount_spent ?? "—"}</td>
+          <td style="white-space:nowrap">
+            <button type="button" class="small" data-act="edit">Edit</button>
+            <button type="button" class="small danger" data-act="delete">Delete</button>
+          </td></tr>`).join("")
+      : `<tr><td colspan="5">No projects yet.</td></tr>`;
+  }
+
+  async function loadBin() {
+    if (!isSuper) return;
+    document.getElementById("binPanel").hidden = false;
+    const { data, error } = await supabaseClient
+      .from("bin").select("*").eq("entity_type", "projects")
+      .order("deleted_at", { ascending: false });
+    if (error) { console.error(error); return; }
+    binItems = data;
+    binRows.innerHTML = data.length
+      ? data.map(b => `<tr data-id="${b.id}">
+          <td>${b.snapshot?.title || b.entity_id}</td>
+          <td>${new Date(b.deleted_at).toLocaleDateString()}</td>
+          <td>${new Date(b.expires_at).toLocaleDateString()}</td>
+          <td style="white-space:nowrap">
+            <button type="button" class="small" data-act="restore">Restore</button>
+            <button type="button" class="small danger" data-act="purge">Delete forever</button>
+          </td></tr>`).join("")
+      : `<tr><td colspan="4">Bin is empty.</td></tr>`;
+  }
+
+  rows.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-act]");
+    if (!btn) return;
+    const p = projects.find(x => x.id === btn.closest("tr").dataset.id);
+    if (!p) return;
+
+    if (btn.dataset.act === "edit") {
+      document.getElementById("id").value = p.id;
+      document.getElementById("formTitle").textContent = "Edit project";
+      for (const k of ["title", "status", "start_date", "end_date", "budget", "amount_spent", "description"]) {
+        document.getElementById(k).value = p[k] ?? "";
+      }
+      document.getElementById("image_urls").value = (p.image_urls || []).join(", ");
+      cancelButton.style.display = "inline-block";
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    // soft-delete (ADR-003): snapshot → bin → remove from projects
+    if (!confirm(`Move "${p.title}" to the Bin?`)) return;
+    btn.disabled = true;
+    const { error: binError } = await supabaseClient.from("bin").insert({
+      entity_type: "projects", entity_id: p.id, deleted_by: admin.id, snapshot: p,
+    });
+    if (binError) {
+      console.error(binError);
+      say(false, binError.message || "Could not move to the Bin.");
+      btn.disabled = false;
+      return;
+    }
+    const { error } = await supabaseClient.from("projects").delete().eq("id", p.id);
+    if (error) { console.error(error); say(false, error.message || "Delete failed."); }
+    else { say(true, `"${p.title}" moved to the Bin.`); await Promise.all([loadProjects(), loadBin()]); }
+    btn.disabled = false;
+  });
+
+  binRows.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-act]");
+    if (!btn) return;
+    const b = binItems.find(x => x.id === btn.closest("tr").dataset.id);
+    if (!b) return;
+    btn.disabled = true;
+
+    if (btn.dataset.act === "restore") {
+      const { error: insError } = await supabaseClient.from("projects").insert(b.snapshot);
+      if (insError) {
+        console.error(insError);
+        say(false, insError.message || "Restore failed.");
+        btn.disabled = false;
+        return;
+      }
+    } else if (!confirm("Permanently delete? This cannot be undone.")) {
+      btn.disabled = false;
+      return;
+    }
+    const { error } = await supabaseClient.from("bin").delete().eq("id", b.id);
+    if (error) { console.error(error); say(false, error.message || "Bin update failed."); }
+    else { say(true, btn.dataset.act === "restore" ? "Project restored." : "Permanently deleted."); await Promise.all([loadProjects(), loadBin()]); }
+    btn.disabled = false;
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const val = (id) => document.getElementById(id).value.trim();
+    const record = {
+      title: val("title"),
+      status: document.getElementById("status").value,
+      start_date: val("start_date") || null,
+      end_date: val("end_date") || null,
+      budget: val("budget") || null,           // string → numeric(12,2); never a JS float
+      amount_spent: val("amount_spent") || null,
+      description: val("description") || null,
+      image_urls: csv(val("image_urls")),
+    };
+    const editingId = document.getElementById("id").value;
+    const { error } = editingId
+      ? await supabaseClient.from("projects").update(record).eq("id", editingId)
+      : await supabaseClient.from("projects").insert(record);
+    if (error) { console.error(error); say(false, error.message || "Could not save the project."); }
+    else { say(true, editingId ? "Project updated." : "Project saved."); resetForm(); await loadProjects(); }
+  });
+
+  await Promise.all([loadProjects(), loadBin()]);
+})();
+</script>
+
+</body>
+</html>
