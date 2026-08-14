@@ -174,7 +174,7 @@
     // picks pending rows up and sends via the provider once one is configured.
     const { error: smsError } = await supabaseClient.from("sms_logs").insert({
       member_id: payment.member_id,
-      template_key: "payment_received",
+      template_key: "payment_success",
       message_body: `Society of Twelve: payment received. Receipt ${payment.receipt_no}, amount BDT ${payment.amount}.`,
       status: "pending",
       sent_by: admin.id,

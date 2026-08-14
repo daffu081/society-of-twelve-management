@@ -230,7 +230,9 @@
     // queue one pending row per member; the sms feature (T19) delivers
     const { error } = await supabaseClient.from("sms_logs").insert(
       members.map(m => ({
-        member_id: m.id, template_key: "notice", message_body: text,
+        member_id: m.id,
+        template_key: smsNotice.notice_type === "meeting" ? "meeting_notice" : "general_notice",
+        message_body: text,
         status: "pending", sent_by: admin.id,
       }))
     );

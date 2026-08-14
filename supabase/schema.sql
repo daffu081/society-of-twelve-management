@@ -119,3 +119,5 @@ create table if not exists public.rule_versions (
  version integer not null, title text not null, body text not null, status text,
  archived_at timestamptz default now()
 );
+-- sms (T19): recipient snapshot for the log (BR10) — member mobile at send time
+alter table public.sms_logs add column if not exists recipient_mobile text;

@@ -425,3 +425,26 @@ drop trigger if exists rules_keep_history on public.rules;
 create trigger rules_keep_history
   before update on public.rules
   for each row execute function public.rules_keep_history();
+
+-- SMS (sms feature): templates readable by any active admin, editable only with
+-- sms_template_edit; logs readable with sms_read, queueable by active admins.
+-- Status updates happen in the send-sms edge function (service role bypasses RLS).
+alter table public.sms_templates enable row level security;
+drop policy if exists sms_templates_admin_read on public.sms_templates;
+create policy sms_templates_admin_read on public.sms_templates
+  for select using (public.is_active_admin());
+drop policy if exists sms_templates_edit on public.sms_templates;
+create policy sms_templates_edit on public.sms_templates
+  for update using (public.has_permission('sms_template_edit'))
+  with check (public.has_permission('sms_template_edit'));
+drop policy if exists sms_templates_insert on public.sms_templates;
+create policy sms_templates_insert on public.sms_templates
+  for insert with check (public.has_permission('sms_template_edit'));
+
+alter table public.sms_logs enable row level security;
+drop policy if exists sms_logs_perm_read on public.sms_logs;
+create policy sms_logs_perm_read on public.sms_logs
+  for select using (public.has_permission('sms_read'));
+drop policy if exists sms_logs_admin_insert on public.sms_logs;
+create policy sms_logs_admin_insert on public.sms_logs
+  for insert with check (public.is_active_admin());
