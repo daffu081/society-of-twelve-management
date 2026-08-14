@@ -120,6 +120,33 @@ create or replace view public.receipt_self as
      or (m.email is not null and lower(m.email) = lower(auth.jwt() ->> 'email'));
 grant select on public.receipt_self to authenticated;
 
+-- Member dues (due-payments feature): expected total = effective monthly fee ×
+-- months from the join month through the current month; due = expected − paid.
+-- Admin-only (the WHERE clause returns nothing for non-admins).
+-- ponytail: dues assume the fee was constant since joining; per-month fee history
+-- can replace months_expected × fee if the society ever needs retroactive accuracy.
+create or replace view public.member_dues as
+  select m.id, m.member_id, m.name, m.mobile,
+         coalesce(m.monthly_fee, fc.monthly_fee, 0) as monthly_fee,
+         gs.months_expected,
+         coalesce(p.total_paid, 0) as total_paid,
+         greatest(coalesce(m.monthly_fee, fc.monthly_fee, 0) * gs.months_expected
+                  - coalesce(p.total_paid, 0), 0) as due_amount,
+         p.last_payment_date
+  from public.members m
+  left join public.fee_categories fc on fc.name = m.fee_category
+  cross join lateral (
+    select (extract(year from age(current_date, coalesce(m.join_date, m.created_at::date))) * 12
+          + extract(month from age(current_date, coalesce(m.join_date, m.created_at::date))) + 1)::int
+          as months_expected
+  ) gs
+  left join lateral (
+    select sum(amount) as total_paid, max(payment_date) as last_payment_date
+    from public.payments where member_id = m.id
+  ) p on true
+  where m.active = true and public.is_active_admin();
+grant select on public.member_dues to authenticated;
+
 -- Fee categories (profession-fee): admins manage; no anon access.
 alter table public.fee_categories enable row level security;
 drop policy if exists fee_categories_admin_all on public.fee_categories;

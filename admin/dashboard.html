@@ -172,10 +172,10 @@
       <p>Manage members and profiles.</p>
     </a>
 
-    <div class="card">
+    <a class="card" href="payments.html" style="text-decoration:none;color:inherit">
       <h3>💳 Payments</h3>
       <p>Manage payments and receipts.</p>
-    </div>
+    </a>
 
     <div class="card">
       <h3>💰 Finance</h3>
@@ -222,11 +222,33 @@
       <p>Manage achievements.</p>
     </div>
 
-    <div class="card">
+    <a class="card" href="settings.html" style="text-decoration:none;color:inherit">
       <h3>⚙️ Settings</h3>
       <p>System configuration.</p>
-    </div>
+    </a>
 
+  </div>
+
+  <div class="card" style="margin-top:30px">
+    <h3>⏰ Due members</h3>
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr>
+        <th style="text-align:left;padding:8px">Member</th>
+        <th style="text-align:left;padding:8px">Monthly fee</th>
+        <th style="text-align:left;padding:8px">Due</th>
+        <th style="text-align:left;padding:8px">Last payment</th>
+        <th></th>
+      </tr></thead>
+      <tbody id="dueRows"><tr><td colspan="5" style="padding:8px">Loading...</td></tr></tbody>
+    </table>
+
+    <div id="reminderBox" hidden style="margin-top:18px;border-top:1px solid #eef1f4;padding-top:18px">
+      <strong>Due reminder to <span id="reminderTo"></span></strong>
+      <textarea id="reminderText" rows="3" style="width:100%;margin-top:8px;padding:12px;border:1px solid #d1d5db;border-radius:10px;font-size:15px;font-family:inherit"></textarea>
+      <button id="sendReminder" style="margin-top:10px;padding:10px 16px;border:0;border-radius:10px;background:#111827;color:#fff;cursor:pointer">Send reminder</button>
+      <button id="cancelReminder" style="margin-top:10px;padding:10px 16px;border:0;border-radius:10px;background:#e5e7eb;cursor:pointer">Cancel</button>
+      <div id="reminderMessage" style="margin-top:8px"></div>
+    </div>
   </div>
 
 </main>
@@ -276,6 +298,70 @@ document.getElementById("year").textContent =
       admin.role === "super_admin"
         ? "Super Admin"
         : "Executive Admin";
+
+  // ---- Due members (due-payments feature) ----
+  const dueRows = document.getElementById("dueRows");
+  const box = document.getElementById("reminderBox");
+  const reminderMessage = document.getElementById("reminderMessage");
+  let reminderTarget = null;
+
+  const { data: dues, error: duesError } = await supabaseClient
+    .from("member_dues").select("*").gt("due_amount", 0)
+    .order("due_amount", { ascending: false });
+  if (duesError) {
+    console.error(duesError);
+    dueRows.innerHTML = `<tr><td colspan="5" style="padding:8px">${duesError.message || "Could not load dues."}</td></tr>`;
+  } else {
+    dueRows.innerHTML = dues.length
+      ? dues.map(d => `<tr data-id="${d.id}">
+          <td style="padding:8px">${d.member_id} — ${d.name}</td>
+          <td style="padding:8px">${d.monthly_fee}</td>
+          <td style="padding:8px"><strong>BDT ${d.due_amount}</strong></td>
+          <td style="padding:8px">${d.last_payment_date ? new Date(d.last_payment_date).toLocaleDateString() : "never"}</td>
+          <td style="padding:8px"><button type="button" style="padding:8px 12px;border:0;border-radius:8px;background:#111827;color:#fff;cursor:pointer">Remind</button></td>
+        </tr>`).join("")
+      : `<tr><td colspan="5" style="padding:8px">No dues — everyone is paid up. 🎉</td></tr>`;
+  }
+
+  dueRows.addEventListener("click", (e) => {
+    if (e.target.tagName !== "BUTTON") return;
+    const tr = e.target.closest("tr[data-id]");
+    reminderTarget = (dues || []).find(d => d.id === tr.dataset.id);
+    if (!reminderTarget) return;
+    document.getElementById("reminderTo").textContent =
+      `${reminderTarget.member_id} — ${reminderTarget.name}`;
+    // editable before sending (BR4)
+    document.getElementById("reminderText").value =
+      `Society of Twelve: প্রিয় ${reminderTarget.name}, আপনার BDT ${reminderTarget.due_amount} মাসিক ফি বকেয়া আছে। অনুগ্রহ করে পরিশোধ করুন। ধন্যবাদ।`;
+    reminderMessage.textContent = "";
+    box.hidden = false;
+    box.scrollIntoView({ behavior: "smooth" });
+  });
+
+  document.getElementById("cancelReminder").addEventListener("click", () => { box.hidden = true; });
+
+  document.getElementById("sendReminder").addEventListener("click", async (e) => {
+    if (!reminderTarget) return;
+    e.target.disabled = true;
+    reminderMessage.style.color = "#dc2626";
+    reminderMessage.textContent = "";
+    // queue on the SMS layer (T19 sends via the provider once configured)
+    const { error } = await supabaseClient.from("sms_logs").insert({
+      member_id: reminderTarget.id,
+      template_key: "due_reminder",
+      message_body: document.getElementById("reminderText").value.trim(),
+      status: "pending",
+      sent_by: admin.id,
+    });
+    if (error) {
+      console.error(error);
+      reminderMessage.textContent = error.message || "Could not queue the reminder.";
+    } else {
+      reminderMessage.style.color = "#16a34a";
+      reminderMessage.textContent = "Reminder queued for sending.";
+    }
+    e.target.disabled = false;
+  });
 
 })();
 

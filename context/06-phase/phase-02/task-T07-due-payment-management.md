@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T07
 feature: due-payments
-status: todo
+status: done
 ---
 
 # T07 — Due payment management
@@ -15,8 +15,8 @@ Compute each member's monthly dues from their fee configuration (T04) and paymen
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC1 | Due calculation | ⬜ |
-| AC2 | Send editable due reminder | ⬜ |
+| AC1 | Due calculation | ✅ |
+| AC2 | Send editable due reminder | ✅ |
 
 ## Implementation approach
 1. Add a due-calculation query joining fee config and payments per member
