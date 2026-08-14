@@ -73,9 +73,9 @@ begin
     new.nid_number := old.nid_number;
     new.birth_registration_id := old.birth_registration_id;
     new.passport_number := old.passport_number;
-    new.show_on_public_directory := old.show_on_public_directory;
     new.created_at := old.created_at;
-    -- permitted to change: education, skills, interests, short_bio
+    -- permitted to change: education, skills, interests, short_bio,
+    -- and show_on_public_directory (the member owns their public visibility — AC1, public-directory)
   end if;
   return new;
 end;
@@ -85,3 +85,14 @@ drop trigger if exists members_guard_self_edit on public.members;
 create trigger members_guard_self_edit
   before update on public.members
   for each row execute function public.members_guard_self_edit();
+
+-- Public directory (public-directory feature): a safe, anon-readable view exposing
+-- only photo, name, profession and short bio for members who opted in. No private,
+-- contact, fee or identity field is present, so none is retrievable by the public (AC2).
+-- security_definer (default) so it bypasses base-table RLS; the WHERE clause limits
+-- rows to opted-in members only (AC1/BR2).
+create or replace view public.members_public as
+  select name, profession, short_bio, photo_url
+  from public.members
+  where show_on_public_directory = true and active = true;
+grant select on public.members_public to anon, authenticated;

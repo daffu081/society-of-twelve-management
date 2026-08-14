@@ -23,10 +23,15 @@ features:
     contract_version: 1
     depends_on: []
   members:
-    status: planned
-    ac_count: 3
+    status: in_progress
+    ac_count: 5
     contract_version: 1
     depends_on: [admin-access]
+  public-directory:
+    status: done
+    ac_count: 2
+    contract_version: 1
+    depends_on: [members, member-profile]
   payments:
     status: planned
     ac_count: 2

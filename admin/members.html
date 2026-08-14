@@ -157,9 +157,27 @@
 
   <div class="panel">
     <h2>Members</h2>
+    <div class="grid" style="grid-template-columns: 2fr 1fr 1fr;">
+      <div>
+        <label for="search">Search (name / ID / mobile)</label>
+        <input id="search" type="search" placeholder="type to filter…">
+      </div>
+      <div>
+        <label for="statusFilter">Status</label>
+        <select id="statusFilter">
+          <option value="">All</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+      <div>
+        <label for="professionFilter">Profession</label>
+        <select id="professionFilter"><option value="">All</option></select>
+      </div>
+    </div>
     <table>
-      <thead><tr><th>Member ID</th><th>Name</th><th>Mobile</th><th>Blood group</th><th>Status</th></tr></thead>
-      <tbody id="memberRows"><tr><td colspan="5">Loading...</td></tr></tbody>
+      <thead><tr><th>Member ID</th><th>Name</th><th>Mobile</th><th>Profession</th><th>Blood group</th><th>Status</th></tr></thead>
+      <tbody id="memberRows"><tr><td colspan="6">Loading...</td></tr></tbody>
     </table>
     <p style="color:#64748b;font-size:14px">Click a row to edit that member.</p>
   </div>
@@ -186,22 +204,51 @@
   const csv = (v) => v.split(",").map(s => s.trim()).filter(Boolean);
   const fromCsv = (a) => Array.isArray(a) ? a.join(", ") : "";
 
+  // ponytail: the Society of Twelve is a small roster — load all members once and
+  // filter/search in the browser. Move to server-side filters if it ever outgrows a page.
+  let allMembers = [];
+  const search = document.getElementById("search");
+  const statusFilter = document.getElementById("statusFilter");
+  const professionFilter = document.getElementById("professionFilter");
+
+  function renderRows() {
+    const q = search.value.trim().toLowerCase();
+    const status = statusFilter.value;
+    const profession = professionFilter.value;
+    const shown = allMembers.filter(m => {
+      if (status === "active" && !m.active) return false;
+      if (status === "inactive" && m.active) return false;
+      if (profession && (m.profession || "") !== profession) return false;
+      if (q && ![m.name, m.member_id, m.mobile].some(f => (f || "").toLowerCase().includes(q))) return false;
+      return true;
+    });
+    rows.innerHTML = shown.length
+      ? shown.map(m =>
+          `<tr data-id="${m.member_id}"><td>${m.member_id}</td><td>${m.name}</td><td>${m.mobile || "—"}</td><td>${m.profession || "—"}</td><td>${m.blood_group || "—"}</td><td>${m.active ? "Active" : "Inactive"}</td></tr>`
+        ).join("")
+      : `<tr><td colspan="6">${allMembers.length ? "No members match." : "No members yet."}</td></tr>`;
+  }
+
   async function loadMembers() {
     const { data, error } = await supabaseClient
       .from("members")
-      .select("member_id, name, mobile, blood_group, active")
+      .select("member_id, name, mobile, profession, blood_group, active")
       .order("created_at", { ascending: false });
     if (error) {
       console.error(error);
-      rows.innerHTML = `<tr><td colspan="5">${error.message || "Could not load members."}</td></tr>`;
+      rows.innerHTML = `<tr><td colspan="6">${error.message || "Could not load members."}</td></tr>`;
       return;
     }
-    rows.innerHTML = data.length
-      ? data.map(m =>
-          `<tr data-id="${m.member_id}"><td>${m.member_id}</td><td>${m.name}</td><td>${m.mobile || "—"}</td><td>${m.blood_group || "—"}</td><td>${m.active ? "Active" : "Inactive"}</td></tr>`
-        ).join("")
-      : `<tr><td colspan="5">No members yet.</td></tr>`;
+    allMembers = data;
+    // rebuild the profession filter from the data present
+    const professions = [...new Set(data.map(m => m.profession).filter(Boolean))].sort();
+    professionFilter.innerHTML = `<option value="">All</option>` +
+      professions.map(p => `<option>${p}</option>`).join("");
+    renderRows();
   }
+
+  [search, statusFilter, professionFilter].forEach(el =>
+    el.addEventListener("input", renderRows));
 
   function resetForm() {
     form.reset();
