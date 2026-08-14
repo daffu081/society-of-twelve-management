@@ -10,7 +10,7 @@ phases:
     ac_green: 10
   phase-02:
     title: "Phase 02 — TBD"
-    status: not_started
+    status: in_progress
     ac_total: 54
-    ac_green: 0
+    ac_green: 3
 # - one block per phase; /create-phase appends, /phase-finish sets status: locked -

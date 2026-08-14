@@ -14,8 +14,8 @@ features:
     depends_on: [members, notices, projects, mahfil]
   member-profile:
     status: in_progress
-    ac_count: 2
-    contract_version: 1
+    ac_count: 5
+    contract_version: 2
     depends_on: [admin-access]
   _cross-cutting:
     status: done
