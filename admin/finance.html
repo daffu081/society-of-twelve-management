@@ -127,9 +127,9 @@
   if (!result) return;
   const { admin } = result;
 
-  // finance permission (BR7): super_admin, or executive with permissions.finance = true.
+  // finance permission (BR7): super_admin, or executive with finance_read.
   // RLS enforces the same server-side; this only gives a friendly early message.
-  if (!(admin.role === "super_admin" || admin.permissions?.finance === true)) {
+  if (!(admin.role === "super_admin" || admin.permissions?.finance_read === true)) {
     document.querySelector("main").innerHTML =
       `<div class="panel">You do not have finance permission. Ask a super admin to grant it.</div>`;
     return;

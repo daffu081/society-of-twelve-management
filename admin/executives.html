@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Executive Management | Society of Twelve</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; color: #17202a; }
+    header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 18px 5%; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo { width: 45px; height: 45px; border-radius: 10px; background: #111827; color: #fff; display: grid; place-items: center; font-weight: bold; }
+    main { padding: 35px 5%; max-width: 900px; margin: auto; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 25px; margin-bottom: 25px; }
+    label { display: block; margin: 12px 0 6px; font-weight: 600; }
+    input, select { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 15px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+    button { margin-top: 18px; padding: 12px 18px; border: 0; border-radius: 10px; background: #111827; color: #fff; font-size: 15px; cursor: pointer; }
+    button.secondary { background: #e5e7eb; color: #111827; }
+    button:disabled { opacity: .6; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eef1f4; }
+    tr[data-id] { cursor: pointer; }
+    tr[data-id]:hover { background: #f9fafb; }
+    #message { margin-top: 12px; }
+    a.back { color: #64748b; text-decoration: none; }
+    .matrix { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px 18px; margin-top: 12px; }
+    .matrix label { display: flex; align-items: center; gap: 8px; font-weight: 400; margin: 4px 0; }
+    .matrix input { width: auto; }
+    .area { font-weight: 700; margin-top: 10px; grid-column: 1 / -1; border-top: 1px solid #eef1f4; padding-top: 10px; }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">SOT</div>
+    <div><strong>Society of Twelve</strong> — Executive Management</div>
+  </div>
+  <a class="back" href="dashboard.html">&larr; Dashboard</a>
+</header>
+
+<main>
+
+  <div class="panel">
+    <h2>Administrators</h2>
+    <table>
+      <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th></tr></thead>
+      <tbody id="adminRows"><tr><td colspan="4">Loading...</td></tr></tbody>
+    </table>
+    <p style="color:#64748b;font-size:14px">Click a row to edit permissions.</p>
+  </div>
+
+  <div class="panel">
+    <h3>Add an executive admin</h3>
+    <form id="adminForm">
+      <div class="grid">
+        <div>
+          <label for="new_name">Name *</label>
+          <input id="new_name" type="text" required>
+        </div>
+        <div>
+          <label for="new_email">Email *</label>
+          <input id="new_email" type="email" required>
+        </div>
+      </div>
+      <button type="submit">Add executive</button>
+    </form>
+  </div>
+
+  <div class="panel" id="permPanel" hidden>
+    <h3>Permissions — <span id="permWho"></span></h3>
+    <div class="grid">
+      <div>
+        <label for="permActive">Status</label>
+        <select id="permActive">
+          <option value="true">Active</option>
+          <option value="false">Inactive</option>
+        </select>
+      </div>
+      <div>
+        <label for="permRole">Role</label>
+        <select id="permRole">
+          <option value="executive_admin">Executive Admin</option>
+          <option value="super_admin">Super Admin</option>
+        </select>
+      </div>
+    </div>
+    <div class="matrix" id="matrix"></div>
+    <button id="savePerms">Save permissions</button>
+    <button id="closePerms" type="button" class="secondary">Close</button>
+  </div>
+
+  <div id="message"></div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
+<script src="admin.js"></script>
+
+<script>
+(async () => {
+  const result = await checkAdminAccess();
+  if (!result) return;
+  const { admin } = result;
+
+  // Super Admin only (BR1). RLS blocks non-supers server-side; this is the friendly gate.
+  if (admin.role !== "super_admin") {
+    document.querySelector("main").innerHTML =
+      `<div class="panel">Only a Super Admin can manage executives.</div>`;
+    return;
+  }
+
+  // Permission-key catalog (BR4): <area>_read/<area>_write + noted extra actions.
+  // has_permission() in rls.sql reads exactly these keys from admins.permissions.
+  const CATALOG = {
+    Members: ["members_read", "members_write"],
+    Payments: ["payments_read", "payments_write"],
+    Finance: ["finance_read", "finance_write"],
+    Notices: ["notices_read", "notices_write", "notices_publish"],
+    Projects: ["projects_read", "projects_write"],
+    Mahfil: ["mahfil_read", "mahfil_write"],
+    SMS: ["sms_read", "sms_write", "sms_send", "sms_template_edit"],
+    Birthday: ["birthday_read", "birthday_write", "birthday_manage"],
+    Awards: ["awards_read", "awards_write"],
+    Rules: ["rules_read", "rules_write"],
+    Reports: ["reports_read", "reports_write", "reports_export"],
+    Committee: ["committee_read", "committee_write"],
+    Settings: ["settings_read", "settings_write"],
+  };
+
+  const rows = document.getElementById("adminRows");
+  const message = document.getElementById("message");
+  const panel = document.getElementById("permPanel");
+  let admins = [];
+  let selected = null;
+
+  function say(ok, text) {
+    message.style.color = ok ? "#16a34a" : "#dc2626";
+    message.textContent = text;
+  }
+
+  async function loadAdmins() {
+    const { data, error } = await supabaseClient
+      .from("admins").select("*").order("created_at");
+    if (error) {
+      console.error(error);
+      rows.innerHTML = `<tr><td colspan="4">${error.message || "Could not load admins."}</td></tr>`;
+      return;
+    }
+    admins = data;
+    rows.innerHTML = data.map(a =>
+      `<tr data-id="${a.id}"><td>${a.name}</td><td>${a.email || "—"}</td><td>${a.role === "super_admin" ? "Super Admin" : "Executive"}</td><td>${a.active ? "Active" : "Inactive"}</td></tr>`
+    ).join("");
+  }
+
+  rows.addEventListener("click", (e) => {
+    const tr = e.target.closest("tr[data-id]");
+    if (!tr) return;
+    selected = admins.find(a => a.id === tr.dataset.id);
+    if (!selected) return;
+    document.getElementById("permWho").textContent = selected.name;
+    document.getElementById("permActive").value = String(selected.active);
+    document.getElementById("permRole").value = selected.role;
+    const matrix = document.getElementById("matrix");
+    matrix.innerHTML = Object.entries(CATALOG).map(([area, keys]) =>
+      `<div class="area">${area}</div>` +
+      keys.map(k =>
+        `<label><input type="checkbox" data-key="${k}" ${selected.permissions?.[k] ? "checked" : ""}>${k}</label>`
+      ).join("")
+    ).join("");
+    panel.hidden = false;
+    panel.scrollIntoView({ behavior: "smooth" });
+  });
+
+  document.getElementById("closePerms").addEventListener("click", () => { panel.hidden = true; });
+
+  document.getElementById("savePerms").addEventListener("click", async (e) => {
+    if (!selected) return;
+    e.target.disabled = true;
+    const permissions = {};
+    document.querySelectorAll("#matrix input[data-key]").forEach(cb => {
+      if (cb.checked) permissions[cb.dataset.key] = true;
+    });
+    // the last-super-admin guard trigger rejects demotion/deactivation of the final super (AC5)
+    const { error } = await supabaseClient.from("admins").update({
+      permissions,
+      active: document.getElementById("permActive").value === "true",
+      role: document.getElementById("permRole").value,
+    }).eq("id", selected.id);
+    if (error) {
+      console.error(error);
+      say(false, error.message || "Could not save permissions.");
+    } else {
+      say(true, `Permissions saved for ${selected.name}.`);
+      panel.hidden = true;
+      await loadAdmins();
+    }
+    e.target.disabled = false;
+  });
+
+  document.getElementById("adminForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const { error } = await supabaseClient.from("admins").insert({
+      name: document.getElementById("new_name").value.trim(),
+      email: document.getElementById("new_email").value.trim(),
+      role: "executive_admin",
+      active: true,
+      permissions: {},
+    });
+    if (error) {
+      console.error(error);
+      say(false, error.message || "Could not add the executive.");
+    } else {
+      say(true, "Executive added — now open their row to grant permissions.");
+      e.target.reset();
+      await loadAdmins();
+    }
+  });
+
+  await loadAdmins();
+})();
+</script>
+
+</body>
+</html>
