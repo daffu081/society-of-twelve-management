@@ -72,6 +72,11 @@ features:
     ac_count: 4
     contract_version: 1
     depends_on: [admin-access]
+  committee:
+    status: done
+    ac_count: 2
+    contract_version: 1
+    depends_on: [admin-access]
   executive-admins:
     status: in_progress
     ac_count: 5

@@ -347,3 +347,19 @@ create or replace view public.members_public as
   from public.members
   where show_on_public_directory = true and active = true;
 grant select on public.members_public to anon, authenticated;
+
+-- Committee (committee feature): public reads visible entries; writes need committee_write.
+alter table public.committee_members enable row level security;
+drop policy if exists committee_public_read on public.committee_members;
+create policy committee_public_read on public.committee_members
+  for select using (visible = true);
+drop policy if exists committee_perm_read on public.committee_members;
+create policy committee_perm_read on public.committee_members
+  for select using (public.has_permission('committee_read'));
+drop policy if exists committee_perm_insert on public.committee_members;
+create policy committee_perm_insert on public.committee_members
+  for insert with check (public.has_permission('committee_write'));
+drop policy if exists committee_perm_update on public.committee_members;
+create policy committee_perm_update on public.committee_members
+  for update using (public.has_permission('committee_write'))
+  with check (public.has_permission('committee_write'));

@@ -89,3 +89,9 @@ create table if not exists public.birthday_logs (id uuid primary key default gen
 create table if not exists public.income (id uuid primary key default gen_random_uuid(),source text not null,amount numeric(12,2) not null,income_date date default current_date,payment_id uuid references public.payments(id),notes text,created_at timestamptz default now());
 create table if not exists public.expenses (id uuid primary key default gen_random_uuid(),category text not null,amount numeric(12,2) not null,expense_date date default current_date,notes text,created_at timestamptz default now());
 create table if not exists public.bin (id uuid primary key default gen_random_uuid(),entity_type text not null,entity_id uuid not null,deleted_by uuid,deleted_at timestamptz default now(),expires_at timestamptz default (now()+interval '30 days'),snapshot jsonb not null);
+-- executive committee (T13): public roster in a configured order
+create table if not exists public.committee_members (
+ id uuid primary key default gen_random_uuid(), name text not null, position text not null,
+ year text, short_bio text, photo_url text, display_order integer default 0,
+ visible boolean default true, created_at timestamptz default now(), updated_at timestamptz default now()
+);

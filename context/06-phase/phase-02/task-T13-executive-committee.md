@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T13
 feature: committee
-status: todo
+status: done
 ---
 
 # T13 — Executive committee
@@ -15,8 +15,8 @@ Executive committee roster (spec §24): photo, name, position, year, short biogr
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC1 | Manage committee entries | ⬜ |
-| AC2 | Public committee display in order | ⬜ |
+| AC1 | Manage committee entries | ✅ |
+| AC2 | Public committee display in order | ✅ |
 
 ## Implementation approach
 1. Add a committee table with display_order and visibility
