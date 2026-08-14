@@ -4,41 +4,51 @@ spec_version: 1
 feature: mahfil
 file_type: technical-context
 contract_version: 1
-status: planned
+status: in_progress
 depends_on: [admin-access]
-last_review: 2026-08-13
+last_review: 2026-08-14
 frozen: false
 tags: [mahfil, technical-context]
 ---
 
 # mahfil — technical context
 
-> Not built yet. Intended shape; sync to code once work starts.
-
 ## Public surface
-**Depends on:** admin-access
-**Exposed to:** <!-- filled when consumers appear -->
+**Depends on:** admin-access; executive-admins (`mahfil_read`/`mahfil_write` keys).
+**Exposed to:** public-site (`mahfil.html` and homepage cards read published rows).
 
 **Exposes:**
 ```
-<!-- signatures added by /implement-task as the feature is built -->
+public.mahfils   -- table; anon sees published = true only (RLS);
+                 -- admin read/write via mahfil_read / mahfil_write
 ```
-**Callers MUST NOT:** bypass `checkAdminAccess()`; hard-delete rows; use floats for money.
+**Callers MUST NOT:** show unpublished mahfils publicly; bypass the permission keys.
 
 ## Implementation status
-| Capability | Status | Notes |
-|---|---|---|
-| (all) | Not started | dashboard card only; no page/script wired |
+| Capability | AC | Status | Notes |
+|---|---|---|---|
+| Create mahfil with status | AC1 | ✅ built | running/previous select |
+| Shown on public site | AC2, AC4 | ✅ built | `mahfil.html`; RLS filters to published |
+| Full event details + publication | AC3 | ✅ built | date/time/venue/image/published |
 
-## Code file mapping (intended)
+## Logic
+- `admin/mahfil.html`: guarded; create/edit with title, status, date, time, venue, image URL,
+  description and a Published toggle.
+- `mahfil.html` (public): lists what RLS exposes (published only), newest event first.
+- `supabase/schema.sql`: `event_date`, `event_time`, `venue`, `published` columns.
+- `supabase/rls.sql`: public read (published), keyed admin read/write.
+
+## Code file mapping
 | File | Purpose |
 |---|---|
-| `admin/mahfil.html` | Admin page (to create) |
-| `admin/mahfil.js` | Page logic (to create) |
-| `mahfils` | Backing table(s) in `supabase/schema.sql` |
+| `admin/mahfil.html` | Mahfil management |
+| `mahfil.html` | Public published-mahfil page |
+| `supabase/schema.sql` | mahfils event/publication columns |
+| `supabase/rls.sql` | mahfils policies |
+| `admin/dashboard.html` | Mahfil card links here |
 
 ## API / data contracts
-- Supabase selects/inserts on `mahfils`, guarded by `checkAdminAccess()`.
+- Select (public, published-only) / keyed insert/update on `mahfils`.
 
 ## Known issues
-- Not started.
+- Image is a URL field until the storage split (T25).

@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T12
 feature: mahfil
-status: todo
+status: done
 ---
 
 # T12 — Mahfil management
@@ -15,8 +15,8 @@ Mahfil event management (spec §20): title, date, time, venue, description, imag
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC3 | Manage mahfil with full details | ⬜ |
-| AC4 | Public mahfil page | ⬜ |
+| AC3 | Manage mahfil with full details | ✅ |
+| AC4 | Public mahfil page | ✅ |
 
 ## Implementation approach
 1. Add a mahfil table with publication status and image
