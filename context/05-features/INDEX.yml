@@ -3,7 +3,7 @@
 # Spec-health checks ac_count against the `### AC` headings in each business-context.md.
 features:
   admin-access:
-    status: in_progress
+    status: done
     ac_count: 4
     contract_version: 1
     depends_on: []
@@ -13,7 +13,7 @@ features:
     contract_version: 1
     depends_on: [members, notices, projects, mahfil]
   member-profile:
-    status: in_progress
+    status: done
     ac_count: 5
     contract_version: 2
     depends_on: [admin-access]

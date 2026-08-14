@@ -68,17 +68,30 @@ Scan the feature table rows for any that still show `⬜ todo` or `🔄 partial`
 
 ### Step 4b — Verify ACs are actually green (not just marked ✅)
 
-For each feature row marked ✅ in the phase table, read its `status` in
-`context/05-features/INDEX.yml` (the authoritative registry) and verify `status: done`. If any
-show `status: planned` or `status: in_progress`, treat that row as incomplete regardless of the
-phase table's ✅ mark, and flag the discrepancy.
+**Check at TASK granularity, not feature granularity.** A phase task delivers only a *subset* of
+its feature's ACs (e.g. task T05 builds payments AC3–AC5 while AC1–AC2 belong to a later phase), so
+a feature can be legitimately `in_progress` in `INDEX.yml` while every task this phase committed to
+is done. Checking the feature's overall `INDEX.yml` status here produces false "MISMATCH" alarms —
+do **not** do that.
 
-Print a summary:
+Instead, for each `✅`-marked row in the phase table, open the task file
+`context/06-phase/<phase-id>/task-<Tnn>-*.md` and verify:
+1. its frontmatter `status: done`, **and**
+2. every AC row in its "Delivers these ACs" table is `✅`, **and**
+3. each of those AC ids is marked green/built in that feature's
+   `context/05-features/<feature>/test-context.md` coverage table (the authoritative as-built proof).
+
+If a task file's `status` is not `done`, or any of its delivered ACs is not green in the feature's
+test-context, treat that row as incomplete and flag it. (This is the settle-drift guard: a task row
+marked ✅ in the phase table whose ACs were never settled green is exactly the bug this step exists
+to catch.)
+
+Print a summary (task-granular):
 ```
-Feature verification:
-  feature-a  → INDEX.yml: done ✅
-  feature-c  → INDEX.yml: done ✅
-  feature-b  → INDEX.yml: in_progress ⚠️  (phase table shows ✅ — MISMATCH)
+Task verification:
+  T01 member-profile  → task: done, AC3–AC5 green ✅
+  T05 payments        → task: done, AC3–AC5 green ✅
+  T09 executive-admins→ task: in_progress ⚠️  (phase table shows ✅ — MISMATCH)
 ```
 
 If all verified done:
