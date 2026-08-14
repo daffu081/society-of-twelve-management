@@ -98,8 +98,12 @@
           <input id="profession" type="text">
         </div>
         <div>
-          <label for="monthly_fee">Monthly fee</label>
-          <input id="monthly_fee" type="number" step="0.01" min="0">
+          <label for="fee_category">Fee category</label>
+          <select id="fee_category"><option value="">— select —</option></select>
+        </div>
+        <div>
+          <label for="monthly_fee">Custom fee (BDT, overrides category)</label>
+          <input id="monthly_fee" type="number" step="0.01" min="0" placeholder="leave empty to use category fee">
         </div>
         <div>
           <label for="join_date">Join date</label>
@@ -204,6 +208,16 @@
   const csv = (v) => v.split(",").map(s => s.trim()).filter(Boolean);
   const fromCsv = (a) => Array.isArray(a) ? a.join(", ") : "";
 
+  // fee categories from settings (profession-fee): drives the member's default monthly due
+  async function loadFeeCategories() {
+    const { data, error } = await supabaseClient
+      .from("fee_categories").select("name, monthly_fee").order("name");
+    if (error) { console.error(error); return; }
+    document.getElementById("fee_category").innerHTML =
+      `<option value="">— select —</option>` +
+      data.map(c => `<option value="${c.name}">${c.name} (${c.monthly_fee})</option>`).join("");
+  }
+
   // ponytail: the Society of Twelve is a small roster — load all members once and
   // filter/search in the browser. Move to server-side filters if it ever outgrows a page.
   let allMembers = [];
@@ -264,7 +278,7 @@
     if (error || !data) { console.error(error); return; }
     document.getElementById("id").value = data.id;
     for (const key of ["name","father_name","house_name","village","mobile","whatsapp",
-      "email","dob","blood_group","profession","monthly_fee","join_date","photo_url",
+      "email","dob","blood_group","profession","fee_category","monthly_fee","join_date","photo_url",
       "short_bio","nid_number","birth_registration_id","passport_number"]) {
       document.getElementById(key).value = data[key] ?? "";
     }
@@ -302,7 +316,8 @@
       dob: val("dob") || null,
       blood_group: val("blood_group") || null,
       profession: val("profession") || null,
-      monthly_fee: val("monthly_fee") || null,       // string → Postgres numeric(12,2); never a JS float
+      fee_category: val("fee_category") || null,
+      monthly_fee: val("monthly_fee") || null,       // custom override; string → Postgres numeric(12,2); never a JS float
       join_date: val("join_date") || null,
       active: document.getElementById("active").value === "true",
       photo_url: val("photo_url") || null,
@@ -333,7 +348,7 @@
     button.disabled = false;
   });
 
-  await loadMembers();
+  await Promise.all([loadMembers(), loadFeeCategories()]);
 })();
 </script>
 
