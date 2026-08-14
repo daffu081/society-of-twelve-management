@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T15
 feature: technical-team
-status: todo
+status: done
 ---
 
 # T15 — Technical team credit
@@ -15,7 +15,7 @@ Public technical-team page (spec §26) displaying the developer credit Sabbir Ah
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC1 | Technical team credit shown | ⬜ |
+| AC1 | Technical team credit shown | ✅ |
 
 ## Implementation approach
 1. Build a static technical-team page showing the developer credit

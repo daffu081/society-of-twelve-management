@@ -82,6 +82,11 @@ features:
     ac_count: 1
     contract_version: 1
     depends_on: [admin-access]
+  technical-team:
+    status: done
+    ac_count: 1
+    contract_version: 1
+    depends_on: []
   executive-admins:
     status: in_progress
     ac_count: 5
