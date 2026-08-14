@@ -5,12 +5,12 @@ tags: [phase-02, phase-summary]
 status: in_progress
 started_at: 2026-08-14
 ac_total: 54
-ac_green: 36
+ac_green: 38
 ---
 
 # Phase 02 — TBD
 
-> **Status: 🔄 IN PROGRESS — 36 / 54 ACs green**
+> **Status: 🔄 IN PROGRESS — 38 / 54 ACs green**
 
 ## What this phase delivers
 
@@ -41,7 +41,7 @@ site), SMS + birthday automation, and the P4 hardening layer (audit, bin, report
 | T14 | **founding-members** | 1 | ✅ done | Founding-member records shown publicly | AC1 |
 | T15 | **technical-team** | 1 | ✅ done | Public developer/technical-team credit | AC1 |
 | T16 | **awards** | 2 | ✅ done | Awards + admin-controlled visibility | AC1–AC2 |
-| T17 | **rules** | 2 | ⬜ todo | Rules & regulations + version history | AC1–AC2 |
+| T17 | **rules** | 2 | ✅ done | Rules & regulations + version history | AC1–AC2 |
 | T18 | **public-site** | 1 | ⬜ todo | Full public page set | AC4 |
 | T19 | **sms** | 3 | ⬜ todo | Editable Bangla templates + send/log + replaceable provider | AC4–AC6 |
 | T20 | **birthday** | 2 | ⬜ todo | Birthday calendar + automatic yearly greeting | AC3–AC4 |
