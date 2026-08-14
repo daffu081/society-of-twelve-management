@@ -244,6 +244,42 @@ create or replace view public.finance_totals as
   where public.has_permission('finance_read');
 grant select on public.finance_totals to authenticated;
 
+-- Notices (notices feature): public reads published, non-archived notices; admins
+-- need notices_read/notices_write; flipping `published` additionally needs
+-- notices_publish (enforced by trigger — BR5-style server-side gating).
+alter table public.notices enable row level security;
+drop policy if exists notices_public_read on public.notices;
+create policy notices_public_read on public.notices
+  for select using (published = true and coalesce(archived, false) = false);
+drop policy if exists notices_perm_read on public.notices;
+create policy notices_perm_read on public.notices
+  for select using (public.has_permission('notices_read'));
+drop policy if exists notices_perm_insert on public.notices;
+create policy notices_perm_insert on public.notices
+  for insert with check (public.has_permission('notices_write'));
+drop policy if exists notices_perm_update on public.notices;
+create policy notices_perm_update on public.notices
+  for update using (public.has_permission('notices_write'))
+  with check (public.has_permission('notices_write'));
+
+create or replace function public.notices_guard_publish() returns trigger
+  language plpgsql security definer set search_path = public as $$
+begin
+  if new.published is distinct from old.published
+     and not public.has_permission('notices_publish') then
+    raise exception 'Publishing a notice requires the notices_publish permission';
+  end if;
+  if new.published = true and old.published = false then
+    new.published_at := now();
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists notices_guard_publish on public.notices;
+create trigger notices_guard_publish
+  before update on public.notices
+  for each row execute function public.notices_guard_publish();
+
 -- Fee categories (profession-fee): any active admin reads (the member form needs
 -- them); editing fees is a settings capability. No anon access.
 alter table public.fee_categories enable row level security;
