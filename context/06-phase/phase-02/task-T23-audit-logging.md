@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T23
 feature: audit
-status: todo
+status: done
 ---
 
 # T23 — Audit logging
@@ -15,7 +15,7 @@ Audit logging (spec §28): record important administrative actions with actor, a
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC1 | Actions are logged | ⬜ |
+| AC1 | Actions are logged | ✅ |
 
 ## Implementation approach
 1. Add an audit_log table capturing actor/action/timestamp/record/old-new
