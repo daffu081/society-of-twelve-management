@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SMS | Society of Twelve</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; color: #17202a; }
+    header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 18px 5%; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo { width: 45px; height: 45px; border-radius: 10px; background: #111827; color: #fff; display: grid; place-items: center; font-weight: bold; }
+    main { padding: 35px 5%; max-width: 900px; margin: auto; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 25px; margin-bottom: 25px; }
+    label { display: block; margin: 12px 0 6px; font-weight: 600; }
+    input, select, textarea { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 15px; font-family: inherit; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+    button { margin-top: 18px; padding: 12px 18px; border: 0; border-radius: 10px; background: #111827; color: #fff; font-size: 15px; cursor: pointer; }
+    button.small { margin: 0; padding: 8px 12px; font-size: 13px; }
+    button:disabled { opacity: .6; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eef1f4; vertical-align: top; }
+    td textarea { padding: 8px; font-size: 14px; }
+    #message { margin-top: 12px; }
+    a.back { color: #64748b; text-decoration: none; }
+    .hint { color: #64748b; font-size: 13px; }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">SOT</div>
+    <div><strong>Society of Twelve</strong> — SMS</div>
+  </div>
+  <a class="back" href="dashboard.html">&larr; Dashboard</a>
+</header>
+
+<main>
+
+  <div class="panel" id="templatePanel">
+    <h2>Templates</h2>
+    <p class="hint">Placeholders: {member_name} {amount} {receipt_no} {due_amount} {date} {time} {venue} {notice_text}</p>
+    <table>
+      <thead><tr><th style="width:22%">Template</th><th>Body (Bangla)</th><th></th></tr></thead>
+      <tbody id="templateRows"><tr><td colspan="3">Loading...</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="panel" id="composePanel">
+    <h2>Send an SMS</h2>
+    <div class="grid">
+      <div>
+        <label for="member">Member *</label>
+        <select id="member"><option value="">— select —</option></select>
+      </div>
+      <div>
+        <label for="template">Template *</label>
+        <select id="template"><option value="">— select —</option></select>
+      </div>
+    </div>
+    <label for="composeBody">Message (placeholders resolved — edit before sending)</label>
+    <textarea id="composeBody" rows="3"></textarea>
+    <button id="queueSend">Send</button>
+    <div id="message"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Queue &amp; log</h2>
+    <table>
+      <thead><tr><th>Member</th><th>Template</th><th>Message</th><th>Status</th><th>When</th><th></th></tr></thead>
+      <tbody id="logRows"><tr><td colspan="6">Loading...</td></tr></tbody>
+    </table>
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
+<script src="admin.js"></script>
+
+<script>
+(async () => {
+  const result = await checkAdminAccess();
+  if (!result) return;
+  const { admin } = result;
+  const can = (cap) => admin.role === "super_admin" || admin.permissions?.[cap] === true;
+
+  const message = document.getElementById("message");
+  const templateRows = document.getElementById("templateRows");
+  const logRows = document.getElementById("logRows");
+  const memberSelect = document.getElementById("member");
+  const templateSelect = document.getElementById("template");
+  const composeBody = document.getElementById("composeBody");
+  let templates = [];
+  let members = [];
+  let logs = [];
+
+  function say(ok, text) {
+    message.style.color = ok ? "#16a34a" : "#dc2626";
+    message.textContent = text;
+  }
+
+  async function loadTemplates() {
+    const { data, error } = await supabaseClient
+      .from("sms_templates").select("*").order("template_name");
+    if (error) {
+      console.error(error);
+      templateRows.innerHTML = `<tr><td colspan="3">${error.message || "Could not load templates."}</td></tr>`;
+      return;
+    }
+    templates = data;
+    const editable = can("sms_template_edit");
+    templateRows.innerHTML = data.length
+      ? data.map(t => `<tr data-key="${t.template_key}">
+          <td><strong>${t.template_name}</strong><br><span class="hint">${t.template_key}</span></td>
+          <td>${editable
+            ? `<textarea rows="2">${t.body}</textarea>`
+            : t.body}</td>
+          <td>${editable ? `<button type="button" class="small">Save</button>` : ""}</td>
+        </tr>`).join("")
+      : `<tr><td colspan="3">No templates — run supabase/seed.sql.</td></tr>`;
+    templateSelect.innerHTML = `<option value="">— select —</option>` +
+      data.map(t => `<option value="${t.template_key}">${t.template_name}</option>`).join("");
+  }
+
+  templateRows.addEventListener("click", async (e) => {
+    if (e.target.tagName !== "BUTTON") return;
+    const tr = e.target.closest("tr[data-key]");
+    const body = tr.querySelector("textarea").value.trim();
+    e.target.disabled = true;
+    const { error } = await supabaseClient.from("sms_templates")
+      .update({ body, updated_at: new Date().toISOString() })
+      .eq("template_key", tr.dataset.key);
+    if (error) { console.error(error); say(false, error.message || "Could not save the template."); }
+    else { say(true, "Template saved — future sends use the new wording."); await loadTemplates(); }
+    e.target.disabled = false;
+  });
+
+  async function loadMembers() {
+    const { data, error } = await supabaseClient
+      .from("members").select("id, member_id, name, mobile").eq("active", true).order("name");
+    if (error) { console.error(error); return; }
+    members = data;
+    memberSelect.innerHTML = `<option value="">— select —</option>` +
+      data.map(m => `<option value="${m.id}">${m.member_id} — ${m.name}</option>`).join("");
+  }
+
+  // resolve placeholders with the values we can know here; the rest stay visible
+  // for manual editing (the body is always editable before sending — BR4/BR6)
+  async function resolvePreview() {
+    const t = templates.find(x => x.template_key === templateSelect.value);
+    const m = members.find(x => x.id === memberSelect.value);
+    if (!t) { composeBody.value = ""; return; }
+    let body = t.body;
+    if (m) {
+      body = body.replaceAll("{member_name}", m.name);
+      if (body.includes("{due_amount}")) {
+        const { data } = await supabaseClient.from("member_dues")
+          .select("due_amount").eq("id", m.id).maybeSingle();
+        if (data) body = body.replaceAll("{due_amount}", data.due_amount);
+      }
+    }
+    composeBody.value = body;
+  }
+  templateSelect.addEventListener("change", resolvePreview);
+  memberSelect.addEventListener("change", resolvePreview);
+
+  document.getElementById("queueSend").addEventListener("click", async (e) => {
+    if (!can("sms_send")) { say(false, "You need the sms_send permission."); return; }
+    if (!memberSelect.value || !composeBody.value.trim()) {
+      say(false, "Pick a member and a message."); return;
+    }
+    e.target.disabled = true;
+    // queue, then dispatch through the edge function (provider secrets live server-side)
+    const { data: log, error } = await supabaseClient.from("sms_logs").insert({
+      member_id: memberSelect.value,
+      template_key: templateSelect.value || null,
+      message_body: composeBody.value.trim(),
+      status: "pending",
+      sent_by: admin.id,
+    }).select("id").single();
+    if (error) {
+      console.error(error);
+      say(false, error.message || "Could not queue the SMS.");
+      e.target.disabled = false;
+      return;
+    }
+    await dispatch(log.id);
+    await loadLogs();
+    e.target.disabled = false;
+  });
+
+  async function dispatch(logId) {
+    const { data, error } = await supabaseClient.functions.invoke("send-sms", { body: { log_id: logId } });
+    if (error || data?.error) {
+      console.error(error || data.error);
+      say(false, (data?.error) || error.message || "Send failed — the message stays queued.");
+    } else {
+      say(true, `Sent to ${data.sent_to}.`);
+    }
+  }
+
+  async function loadLogs() {
+    const { data, error } = await supabaseClient
+      .from("sms_logs")
+      .select("id, template_key, message_body, status, sent_at, created_at, members(member_id, name)")
+      .order("created_at", { ascending: false }).limit(50);
+    if (error) {
+      console.error(error);
+      logRows.innerHTML = `<tr><td colspan="6">${error.message || "Could not load the log."}</td></tr>`;
+      return;
+    }
+    logs = data;
+    logRows.innerHTML = data.length
+      ? data.map(l => `<tr>
+          <td>${l.members ? l.members.name : "—"}</td>
+          <td>${l.template_key || "—"}</td>
+          <td>${l.message_body}</td>
+          <td>${l.status}</td>
+          <td>${new Date(l.sent_at || l.created_at).toLocaleString()}</td>
+          <td>${l.status === "pending" && can("sms_send")
+            ? `<button type="button" class="small" data-id="${l.id}">Send now</button>` : ""}</td>
+        </tr>`).join("")
+      : `<tr><td colspan="6">No messages yet.</td></tr>`;
+  }
+
+  logRows.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-id]");
+    if (!btn) return;
+    btn.disabled = true;
+    await dispatch(btn.dataset.id);
+    await loadLogs();
+  });
+
+  await Promise.all([loadTemplates(), loadMembers(), loadLogs()]);
+})();
+</script>
+
+</body>
+</html>
