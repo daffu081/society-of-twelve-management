@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T19
 feature: sms
-status: todo
+status: done
 ---
 
 # T19 — SMS templates & sending
@@ -15,9 +15,9 @@ SMS layer (spec §11–§12): all message bodies are editable templates in the a
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC4 | Edit templates | ⬜ |
-| AC5 | Send and log | ⬜ |
-| AC6 | Provider is replaceable and secret-safe | ⬜ |
+| AC4 | Edit templates | ✅ |
+| AC5 | Send and log | ✅ |
+| AC6 | Provider is replaceable and secret-safe | ✅ |
 
 ## Implementation approach
 1. Add sms_templates and sms_log tables seeded with the six Bangla templates

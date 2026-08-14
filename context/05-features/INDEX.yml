@@ -103,8 +103,8 @@ features:
     contract_version: 1
     depends_on: [admin-access]
   sms:
-    status: planned
-    ac_count: 3
+    status: in_progress
+    ac_count: 6
     contract_version: 1
     depends_on: [admin-access, members]
   birthday:
