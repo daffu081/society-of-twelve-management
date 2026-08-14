@@ -5,12 +5,12 @@ tags: [phase-02, phase-summary]
 status: in_progress
 started_at: 2026-08-14
 ac_total: 54
-ac_green: 16
+ac_green: 18
 ---
 
 # Phase 02 — TBD
 
-> **Status: 🔄 IN PROGRESS — 16 / 54 ACs green**
+> **Status: 🔄 IN PROGRESS — 18 / 54 ACs green**
 
 ## What this phase delivers
 
@@ -31,7 +31,7 @@ site), SMS + birthday automation, and the P4 hardening layer (audit, bin, report
 | T04 | **profession-fee** | 3 | ✅ done | Fee tiers + custom fee + history immutability | AC1–AC3 |
 | T05 | **payments** | 3 | ✅ done | Full payment record + receipt trigger + member history | AC3–AC5 |
 | T06 | **receipts** | 3 | ✅ done | Branded printable/PDF receipt + email | AC1–AC3 |
-| T07 | **due-payments** | 2 | ⬜ todo | Due calculation + editable reminders | AC1–AC2 |
+| T07 | **due-payments** | 2 | ✅ done | Due calculation + editable reminders | AC1–AC2 |
 | T08 | **finance** | 3 | ⬜ todo | Income/expense + balance, private | AC4–AC6 |
 | T09 | **executive-admins** | 2 | ⬜ todo | Enforced permission matrix + last-super-admin guard | AC4–AC5 |
 | T10 | **notices** | 3 | ⬜ todo | Notices + meetings + reviewed SMS, ref numbers | AC3–AC5 |
