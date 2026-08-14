@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Founding Members | Society of Twelve</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; color: #17202a; }
+    header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 18px 5%; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo { width: 45px; height: 45px; border-radius: 10px; background: #111827; color: #fff; display: grid; place-items: center; font-weight: bold; }
+    main { padding: 35px 5%; max-width: 900px; margin: auto; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 25px; margin-bottom: 25px; }
+    label { display: block; margin: 12px 0 6px; font-weight: 600; }
+    input, textarea { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 15px; font-family: inherit; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+    button { margin-top: 18px; padding: 12px 18px; border: 0; border-radius: 10px; background: #111827; color: #fff; font-size: 15px; cursor: pointer; }
+    button.secondary { background: #e5e7eb; color: #111827; }
+    button.small { margin: 0; padding: 8px 12px; font-size: 13px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eef1f4; }
+    #message { margin-top: 12px; }
+    a.back { color: #64748b; text-decoration: none; }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">SOT</div>
+    <div><strong>Society of Twelve</strong> — Founding Members</div>
+  </div>
+  <a class="back" href="dashboard.html">&larr; Dashboard</a>
+</header>
+
+<main>
+
+  <div class="panel">
+    <h2 id="formTitle">Add a founding member</h2>
+    <form id="founderForm">
+      <input id="id" type="hidden">
+      <div class="grid">
+        <div>
+          <label for="name">Name *</label>
+          <input id="name" type="text" required>
+        </div>
+        <div>
+          <label for="historical_role">Historical role</label>
+          <input id="historical_role" type="text" placeholder="Founder, Co-founder…">
+        </div>
+        <div>
+          <label for="photo_url">Photo URL</label>
+          <input id="photo_url" type="url" placeholder="https://…">
+        </div>
+        <div>
+          <label for="display_order">Display order</label>
+          <input id="display_order" type="number" value="0">
+        </div>
+      </div>
+      <label for="short_bio">Short biography</label>
+      <textarea id="short_bio" rows="3"></textarea>
+      <button type="submit">Save founding member</button>
+      <button id="cancelButton" type="button" class="secondary" style="display:none">Cancel edit</button>
+    </form>
+    <div id="message"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Founding members</h2>
+    <table>
+      <thead><tr><th>Order</th><th>Name</th><th>Role</th><th></th></tr></thead>
+      <tbody id="founderRows"><tr><td colspan="4">Loading...</td></tr></tbody>
+    </table>
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
+<script src="admin.js"></script>
+
+<script>
+(async () => {
+  const result = await checkAdminAccess();
+  if (!result) return;
+
+  const rows = document.getElementById("founderRows");
+  const message = document.getElementById("message");
+  const form = document.getElementById("founderForm");
+  const cancelButton = document.getElementById("cancelButton");
+  let founders = [];
+
+  function say(ok, text) {
+    message.style.color = ok ? "#16a34a" : "#dc2626";
+    message.textContent = text;
+  }
+
+  function resetForm() {
+    form.reset();
+    document.getElementById("id").value = "";
+    document.getElementById("display_order").value = "0";
+    document.getElementById("formTitle").textContent = "Add a founding member";
+    cancelButton.style.display = "none";
+  }
+  cancelButton.addEventListener("click", resetForm);
+
+  async function loadFounders() {
+    const { data, error } = await supabaseClient
+      .from("founding_members").select("*").order("display_order").order("name");
+    if (error) {
+      console.error(error);
+      rows.innerHTML = `<tr><td colspan="4">${error.message || "Could not load founding members."}</td></tr>`;
+      return;
+    }
+    founders = data;
+    rows.innerHTML = data.length
+      ? data.map(f => `<tr data-id="${f.id}">
+          <td>${f.display_order}</td><td>${f.name}</td><td>${f.historical_role || "—"}</td>
+          <td><button type="button" class="small" data-act="edit">Edit</button></td>
+        </tr>`).join("")
+      : `<tr><td colspan="4">No founding members yet.</td></tr>`;
+  }
+
+  rows.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-act='edit']");
+    if (!btn) return;
+    const f = founders.find(x => x.id === btn.closest("tr").dataset.id);
+    if (!f) return;
+    document.getElementById("id").value = f.id;
+    document.getElementById("formTitle").textContent = "Edit " + f.name;
+    for (const k of ["name", "historical_role", "photo_url", "display_order", "short_bio"]) {
+      document.getElementById(k).value = f[k] ?? "";
+    }
+    cancelButton.style.display = "inline-block";
+    window.scrollTo(0, 0);
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const val = (id) => document.getElementById(id).value.trim();
+    const record = {
+      name: val("name"),
+      historical_role: val("historical_role") || null,
+      photo_url: val("photo_url") || null,
+      display_order: parseInt(val("display_order") || "0", 10),
+      short_bio: val("short_bio") || null,
+      updated_at: new Date().toISOString(),
+    };
+    const editingId = document.getElementById("id").value;
+    const { error } = editingId
+      ? await supabaseClient.from("founding_members").update(record).eq("id", editingId)
+      : await supabaseClient.from("founding_members").insert(record);
+    if (error) { console.error(error); say(false, error.message || "Could not save."); }
+    else { say(true, editingId ? "Founding member updated." : "Founding member added."); resetForm(); await loadFounders(); }
+  });
+
+  await loadFounders();
+})();
+</script>
+
+</body>
+</html>

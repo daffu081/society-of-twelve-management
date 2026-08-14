@@ -95,3 +95,9 @@ create table if not exists public.committee_members (
  year text, short_bio text, photo_url text, display_order integer default 0,
  visible boolean default true, created_at timestamptz default now(), updated_at timestamptz default now()
 );
+-- founding members (T14): public historical recognition
+create table if not exists public.founding_members (
+ id uuid primary key default gen_random_uuid(), name text not null, historical_role text,
+ short_bio text, photo_url text, display_order integer default 0,
+ created_at timestamptz default now(), updated_at timestamptz default now()
+);
