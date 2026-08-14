@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Member login | Society of Twelve</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; color: #17202a; display: grid; place-items: center; min-height: 100vh; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 30px; width: 360px; max-width: 90vw; }
+    .logo { width: 45px; height: 45px; border-radius: 10px; background: #111827; color: #fff; display: grid; place-items: center; font-weight: bold; margin-bottom: 16px; }
+    label { display: block; margin: 12px 0 6px; font-weight: 600; }
+    input { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 15px; }
+    button { margin-top: 18px; width: 100%; padding: 12px; border: 0; border-radius: 10px; background: #111827; color: #fff; font-size: 15px; cursor: pointer; }
+    button:disabled { opacity: .6; }
+    #message { margin-top: 12px; font-size: 14px; }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <div class="logo">SOT</div>
+    <h2>Member portal</h2>
+    <p style="color:#64748b;font-size:14px">Log in with the email on your member record to view and edit your profile.</p>
+    <form id="loginForm">
+      <label for="email">Email</label>
+      <input id="email" type="email" required>
+      <button id="loginButton" type="submit">Send login link</button>
+    </form>
+    <div id="message"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../config.js"></script>
+  <script src="member.js"></script>
+  <script>
+    const form = document.getElementById("loginForm");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const button = document.getElementById("loginButton");
+      const message = document.getElementById("message");
+      button.disabled = true;
+      button.textContent = "Sending...";
+      message.textContent = "";
+      const { error } = await memberClient.auth.signInWithOtp({
+        email: document.getElementById("email").value.trim(),
+        options: { emailRedirectTo: window.location.origin + "/member/profile.html" },
+      });
+      if (error) {
+        console.error(error);
+        message.style.color = "#dc2626";
+        message.textContent = error.message || "Unable to send login link.";
+      } else {
+        message.style.color = "#16a34a";
+        message.textContent = "Login link sent. Please check your email.";
+      }
+      button.disabled = false;
+      button.textContent = "Send login link";
+    });
+  </script>
+</body>
+</html>

@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T01
 feature: member-profile
-status: todo
+status: done
 ---
 
 # T01 — Full member profile
@@ -15,9 +15,9 @@ Phase 01 added only the blood-group field; this task builds the complete member 
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC3 | Full profile captured | ⬜ |
-| AC4 | Private identity fields stored but hidden | ⬜ |
-| AC5 | Member self-service edit | ⬜ |
+| AC3 | Full profile captured | ✅ |
+| AC4 | Private identity fields stored but hidden | ✅ |
+| AC5 | Member self-service edit | ✅ |
 
 ## Implementation approach
 1. Extend the members table with the full field set and an auto SOT#### id sequence (blood_group already exists)

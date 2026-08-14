@@ -9,6 +9,10 @@ create table if not exists public.members (
 );
 -- idempotent: add blood_group to members tables that already exist
 alter table public.members add column if not exists blood_group text;
+-- auto-generate the human-facing SOT#### id server-side (no client race; BR1 never-reused, never-editable)
+create sequence if not exists public.members_member_id_seq;
+alter table public.members
+  alter column member_id set default 'SOT' || lpad(nextval('public.members_member_id_seq')::text, 4, '0');
 create table if not exists public.payments (
  id uuid primary key default gen_random_uuid(), receipt_no text unique not null, member_id uuid references public.members(id),
  amount numeric(12,2) not null, purpose text not null, payment_method text not null, payment_date timestamptz default now(), notes text, created_by uuid, created_at timestamptz default now()

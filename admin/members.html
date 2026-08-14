@@ -15,12 +15,20 @@
     main { padding: 35px 5%; max-width: 900px; margin: auto; }
     .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 25px; margin-bottom: 25px; }
     label { display: block; margin: 12px 0 6px; font-weight: 600; }
-    input, select { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 15px; }
+    input, select, textarea { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 15px; font-family: inherit; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+    .private { border-left: 3px solid #dc2626; padding-left: 12px; margin-top: 18px; }
+    .private small { color: #dc2626; }
+    fieldset { border: 1px solid #e5e7eb; border-radius: 10px; margin: 18px 0 0; padding: 6px 16px 16px; }
+    legend { font-weight: 700; padding: 0 6px; }
     button { margin-top: 18px; padding: 12px 18px; border: 0; border-radius: 10px; background: #111827; color: #fff; font-size: 15px; cursor: pointer; }
+    button.secondary { background: #e5e7eb; color: #111827; }
     button:disabled { opacity: .6; }
     #message { margin-top: 12px; }
     table { width: 100%; border-collapse: collapse; }
     th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eef1f4; }
+    tr[data-id] { cursor: pointer; }
+    tr[data-id]:hover { background: #f9fafb; }
     a.back { color: #64748b; text-decoration: none; }
   </style>
 </head>
@@ -38,24 +46,111 @@
 <main>
 
   <div class="panel">
-    <h2>Register a member</h2>
+    <h2 id="formTitle">Register a member</h2>
     <form id="memberForm">
-      <label for="name">Name</label>
-      <input id="name" type="text" required>
+      <input id="id" type="hidden">
 
-      <label for="mobile">Mobile</label>
-      <input id="mobile" type="text" required>
+      <div class="grid">
+        <div>
+          <label for="name">Full name *</label>
+          <input id="name" type="text" required>
+        </div>
+        <div>
+          <label for="father_name">Father's name</label>
+          <input id="father_name" type="text">
+        </div>
+        <div>
+          <label for="house_name">House name</label>
+          <input id="house_name" type="text">
+        </div>
+        <div>
+          <label for="village">Village</label>
+          <input id="village" type="text">
+        </div>
+        <div>
+          <label for="mobile">Mobile *</label>
+          <input id="mobile" type="text" required>
+        </div>
+        <div>
+          <label for="whatsapp">WhatsApp</label>
+          <input id="whatsapp" type="text">
+        </div>
+        <div>
+          <label for="email">Email (optional)</label>
+          <input id="email" type="email">
+        </div>
+        <div>
+          <label for="dob">Date of birth</label>
+          <input id="dob" type="date">
+        </div>
+        <div>
+          <label for="blood_group">Blood group</label>
+          <select id="blood_group">
+            <option value="">— select —</option>
+            <option>A+</option><option>A-</option>
+            <option>B+</option><option>B-</option>
+            <option>AB+</option><option>AB-</option>
+            <option>O+</option><option>O-</option>
+          </select>
+        </div>
+        <div>
+          <label for="profession">Profession</label>
+          <input id="profession" type="text">
+        </div>
+        <div>
+          <label for="monthly_fee">Monthly fee</label>
+          <input id="monthly_fee" type="number" step="0.01" min="0">
+        </div>
+        <div>
+          <label for="join_date">Join date</label>
+          <input id="join_date" type="date">
+        </div>
+        <div>
+          <label for="active">Status</label>
+          <select id="active">
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
+          </select>
+        </div>
+        <div>
+          <label for="photo_url">Profile photo URL</label>
+          <input id="photo_url" type="url" placeholder="https://...">
+        </div>
+      </div>
 
-      <label for="blood_group">Blood group</label>
-      <select id="blood_group">
-        <option value="">— select —</option>
-        <option>A+</option><option>A-</option>
-        <option>B+</option><option>B-</option>
-        <option>AB+</option><option>AB-</option>
-        <option>O+</option><option>O-</option>
-      </select>
+      <label for="education">Education (optional)</label>
+      <input id="education" type="text">
+
+      <label for="skills">Skills (comma-separated)</label>
+      <input id="skills" type="text" placeholder="teaching, design">
+
+      <label for="interests">Interests (comma-separated)</label>
+      <input id="interests" type="text" placeholder="reading, football">
+
+      <label for="short_bio">Short bio (optional)</label>
+      <textarea id="short_bio" rows="3"></textarea>
+
+      <fieldset class="private">
+        <legend>Private identity — organization only</legend>
+        <small>Never shown on public pages or to the member.</small>
+        <div class="grid">
+          <div>
+            <label for="nid_number">NID number</label>
+            <input id="nid_number" type="text">
+          </div>
+          <div>
+            <label for="birth_registration_id">Birth registration ID</label>
+            <input id="birth_registration_id" type="text">
+          </div>
+          <div>
+            <label for="passport_number">Passport number</label>
+            <input id="passport_number" type="text">
+          </div>
+        </div>
+      </fieldset>
 
       <button id="saveButton" type="submit">Save member</button>
+      <button id="cancelButton" type="button" class="secondary" style="display:none">Cancel edit</button>
     </form>
     <div id="message"></div>
   </div>
@@ -63,9 +158,10 @@
   <div class="panel">
     <h2>Members</h2>
     <table>
-      <thead><tr><th>Member ID</th><th>Name</th><th>Blood group</th></tr></thead>
-      <tbody id="memberRows"><tr><td colspan="3">Loading...</td></tr></tbody>
+      <thead><tr><th>Member ID</th><th>Name</th><th>Mobile</th><th>Blood group</th><th>Status</th></tr></thead>
+      <tbody id="memberRows"><tr><td colspan="5">Loading...</td></tr></tbody>
     </table>
+    <p style="color:#64748b;font-size:14px">Click a row to edit that member.</p>
   </div>
 
 </main>
@@ -78,58 +174,113 @@
 (async () => {
   const result = await checkAdminAccess();
   if (!result) return;
-  const { admin } = result;
 
   const rows = document.getElementById("memberRows");
   const message = document.getElementById("message");
   const button = document.getElementById("saveButton");
+  const cancelButton = document.getElementById("cancelButton");
+  const formTitle = document.getElementById("formTitle");
+  const form = document.getElementById("memberForm");
+
+  // admin edits every field, including the private identity fields
+  const csv = (v) => v.split(",").map(s => s.trim()).filter(Boolean);
+  const fromCsv = (a) => Array.isArray(a) ? a.join(", ") : "";
 
   async function loadMembers() {
     const { data, error } = await supabaseClient
       .from("members")
-      .select("member_id, name, blood_group")
+      .select("member_id, name, mobile, blood_group, active")
       .order("created_at", { ascending: false });
     if (error) {
       console.error(error);
-      rows.innerHTML = `<tr><td colspan="3">${error.message || "Could not load members."}</td></tr>`;
+      rows.innerHTML = `<tr><td colspan="5">${error.message || "Could not load members."}</td></tr>`;
       return;
     }
     rows.innerHTML = data.length
       ? data.map(m =>
-          `<tr><td>${m.member_id}</td><td>${m.name}</td><td>${m.blood_group || "—"}</td></tr>`
+          `<tr data-id="${m.member_id}"><td>${m.member_id}</td><td>${m.name}</td><td>${m.mobile || "—"}</td><td>${m.blood_group || "—"}</td><td>${m.active ? "Active" : "Inactive"}</td></tr>`
         ).join("")
-      : `<tr><td colspan="3">No members yet.</td></tr>`;
+      : `<tr><td colspan="5">No members yet.</td></tr>`;
   }
 
-  // ponytail: count-based id, races under concurrent adds; proper SOT#### sequencing
-  // belongs to the members feature when it's built.
-  async function nextMemberId() {
-    const { count } = await supabaseClient
-      .from("members")
-      .select("*", { count: "exact", head: true });
-    return "SOT" + String((count || 0) + 1).padStart(4, "0");
+  function resetForm() {
+    form.reset();
+    document.getElementById("id").value = "";
+    formTitle.textContent = "Register a member";
+    button.textContent = "Save member";
+    cancelButton.style.display = "none";
   }
 
-  document.getElementById("memberForm").addEventListener("submit", async (e) => {
+  async function editMember(memberId) {
+    const { data, error } = await supabaseClient
+      .from("members").select("*").eq("member_id", memberId).single();
+    if (error || !data) { console.error(error); return; }
+    document.getElementById("id").value = data.id;
+    for (const key of ["name","father_name","house_name","village","mobile","whatsapp",
+      "email","dob","blood_group","profession","monthly_fee","join_date","photo_url",
+      "short_bio","nid_number","birth_registration_id","passport_number"]) {
+      document.getElementById(key).value = data[key] ?? "";
+    }
+    document.getElementById("active").value = String(data.active);
+    document.getElementById("education").value = data.education ?? "";
+    document.getElementById("skills").value = fromCsv(data.skills);
+    document.getElementById("interests").value = fromCsv(data.interests);
+    formTitle.textContent = "Edit " + data.member_id;
+    button.textContent = "Update member";
+    cancelButton.style.display = "inline-block";
+    window.scrollTo(0, 0);
+  }
+
+  rows.addEventListener("click", (e) => {
+    const tr = e.target.closest("tr[data-id]");
+    if (tr) editMember(tr.dataset.id);
+  });
+  cancelButton.addEventListener("click", resetForm);
+
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
     button.disabled = true;
     message.style.color = "#dc2626";
     message.textContent = "";
 
-    const { error } = await supabaseClient.from("members").insert({
-      member_id: await nextMemberId(),
-      name: document.getElementById("name").value.trim(),
-      mobile: document.getElementById("mobile").value.trim(),
-      blood_group: document.getElementById("blood_group").value || null,
-    });
+    const val = (id) => document.getElementById(id).value.trim();
+    const record = {
+      name: val("name"),
+      father_name: val("father_name") || null,
+      house_name: val("house_name") || null,
+      village: val("village") || null,
+      mobile: val("mobile"),
+      whatsapp: val("whatsapp") || null,
+      email: val("email") || null,
+      dob: val("dob") || null,
+      blood_group: val("blood_group") || null,
+      profession: val("profession") || null,
+      monthly_fee: val("monthly_fee") || null,       // string → Postgres numeric(12,2); never a JS float
+      join_date: val("join_date") || null,
+      active: document.getElementById("active").value === "true",
+      photo_url: val("photo_url") || null,
+      education: val("education") || null,
+      skills: csv(val("skills")),
+      interests: csv(val("interests")),
+      short_bio: val("short_bio") || null,
+      nid_number: val("nid_number") || null,
+      birth_registration_id: val("birth_registration_id") || null,
+      passport_number: val("passport_number") || null,
+    };
+
+    const editingId = document.getElementById("id").value;
+    // member_id is assigned server-side by the sequence default — never sent from the client
+    const { error } = editingId
+      ? await supabaseClient.from("members").update(record).eq("id", editingId)
+      : await supabaseClient.from("members").insert(record);
 
     if (error) {
       console.error(error);
       message.textContent = error.message || "Could not save member.";
     } else {
       message.style.color = "#16a34a";
-      message.textContent = "Member saved.";
-      e.target.reset();
+      message.textContent = editingId ? "Member updated." : "Member saved.";
+      resetForm();
       await loadMembers();
     }
     button.disabled = false;
