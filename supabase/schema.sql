@@ -67,6 +67,11 @@ alter table public.projects add column if not exists start_date date;
 alter table public.projects add column if not exists end_date date;
 alter table public.projects add column if not exists budget numeric(12,2);
 alter table public.projects add column if not exists amount_spent numeric(12,2);
+-- mahfil (T12): full event fields + publication state
+alter table public.mahfils add column if not exists event_date date;
+alter table public.mahfils add column if not exists event_time time;
+alter table public.mahfils add column if not exists venue text;
+alter table public.mahfils add column if not exists published boolean default false;
 create table if not exists public.payments (
  id uuid primary key default gen_random_uuid(), receipt_no text unique not null, member_id uuid references public.members(id),
  amount numeric(12,2) not null, purpose text not null, payment_method text not null, payment_date timestamptz default now(), notes text, created_by uuid, created_at timestamptz default now()

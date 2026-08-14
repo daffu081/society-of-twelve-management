@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Mahfil | Society of Twelve</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .mahfil { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+    .mahfil img { max-width: 100%; border-radius: 10px; margin-top: 10px; }
+    .mahfil .meta { background: #f5f7fa; border-radius: 10px; padding: 10px 14px; margin-top: 10px; font-size: 14px; }
+  </style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="logo">SOT</div><div><h1>Mahfil</h1><p>Society of Twelve</p></div></div>
+  <nav><a href="index.html">← Home</a></nav>
+</header>
+<main>
+  <section>
+    <h2>Mahfils</h2>
+    <div id="list"><p>Loading…</p></div>
+  </section>
+</main>
+<footer><strong>Society of Twelve</strong><div>© <span id="year"></span> Society of Twelve — All Rights Reserved.</div></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+  const { createClient } = window.supabase;
+  const client = createClient(window.SOT_CONFIG.SUPABASE_URL, window.SOT_CONFIG.SUPABASE_ANON_KEY);
+  const list = document.getElementById("list");
+
+  (async () => {
+    // RLS returns only published mahfils to the public
+    const { data, error } = await client
+      .from("mahfils")
+      .select("title, description, status, event_date, event_time, venue, cover_url")
+      .order("event_date", { ascending: false });
+    if (error) {
+      console.error(error);
+      list.innerHTML = `<p>${error.message || "Could not load mahfils."}</p>`;
+      return;
+    }
+    if (!data.length) { list.innerHTML = `<p>No mahfils published yet.</p>`; return; }
+    list.innerHTML = data.map(m => `
+      <article class="mahfil">
+        <h3>${m.title}</h3>
+        ${m.description ? `<p>${m.description}</p>` : ""}
+        <div class="meta">📅 ${m.event_date || "TBA"}${m.event_time ? " · 🕐 " + m.event_time : ""}${m.venue ? " · 📍 " + m.venue : ""}</div>
+        ${m.cover_url ? `<img src="${m.cover_url}" alt="${m.title}">` : ""}
+      </article>`).join("");
+  })();
+</script>
+</body>
+</html>

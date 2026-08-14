@@ -297,6 +297,22 @@ drop policy if exists projects_perm_delete on public.projects;
 create policy projects_perm_delete on public.projects
   for delete using (public.has_permission('projects_write'));
 
+-- Mahfil (mahfil feature): public reads published only; writes need mahfil_write.
+alter table public.mahfils enable row level security;
+drop policy if exists mahfils_public_read on public.mahfils;
+create policy mahfils_public_read on public.mahfils
+  for select using (published = true);
+drop policy if exists mahfils_perm_read on public.mahfils;
+create policy mahfils_perm_read on public.mahfils
+  for select using (public.has_permission('mahfil_read'));
+drop policy if exists mahfils_perm_insert on public.mahfils;
+create policy mahfils_perm_insert on public.mahfils
+  for insert with check (public.has_permission('mahfil_write'));
+drop policy if exists mahfils_perm_update on public.mahfils;
+create policy mahfils_perm_update on public.mahfils
+  for update using (public.has_permission('mahfil_write'))
+  with check (public.has_permission('mahfil_write'));
+
 -- Bin (ADR-003): area-permitted admins insert snapshots when soft-deleting;
 -- only a Super Admin reads, restores (delete-after-restore) or purges (BR5).
 -- Full bin lifecycle/cleanup is the bin feature (T24).
