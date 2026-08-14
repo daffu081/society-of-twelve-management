@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T05
 feature: payments
-status: todo
+status: done
 ---
 
 # T05 — Payment recording & history
@@ -15,9 +15,9 @@ Build full payment recording (spec §9): method (Online/Cash/Bank/bKash/Nagad/fu
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC3 | Record a full payment | ⬜ |
-| AC4 | Payment triggers receipt & notification | ⬜ |
-| AC5 | Member views own history | ⬜ |
+| AC3 | Record a full payment | ✅ |
+| AC4 | Payment triggers receipt & notification | ✅ |
+| AC5 | Member views own history | ✅ |
 
 ## Implementation approach
 1. Add a payments table with an immutable amount and a SOT-YYYYMM-#### receipt-number generator

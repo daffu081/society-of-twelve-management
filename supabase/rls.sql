@@ -91,6 +91,23 @@ create trigger members_guard_self_edit
 -- contact, fee or identity field is present, so none is retrievable by the public (AC2).
 -- security_definer (default) so it bypasses base-table RLS; the WHERE clause limits
 -- rows to opted-in members only (AC1/BR2).
+-- Payments (payments feature): admins manage; members read their own rows only
+-- through the payments_self view; anon gets nothing.
+alter table public.payments enable row level security;
+drop policy if exists payments_admin_all on public.payments;
+create policy payments_admin_all on public.payments
+  for all using (public.is_active_admin()) with check (public.is_active_admin());
+
+-- Member-facing view: own payment history, matched by the member's email (AC5).
+-- security_definer (default) bypasses base-table RLS; the WHERE clause isolates
+-- the caller's own rows, so no member SELECT policy is needed on payments.
+create or replace view public.payments_self as
+  select p.receipt_no, p.amount, p.purpose, p.payment_method, p.payment_date, p.notes
+  from public.payments p
+  join public.members m on m.id = p.member_id
+  where m.email is not null and lower(m.email) = lower(auth.jwt() ->> 'email');
+grant select on public.payments_self to authenticated;
+
 -- Fee categories (profession-fee): admins manage; no anon access.
 alter table public.fee_categories enable row level security;
 drop policy if exists fee_categories_admin_all on public.fee_categories;
