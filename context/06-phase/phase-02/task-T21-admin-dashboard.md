@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T21
 feature: dashboard
-status: todo
+status: done
 ---
 
 # T21 — Admin dashboard
@@ -15,8 +15,8 @@ Admin dashboard (spec §15): a permission-aware overview showing total/active/du
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC1 | Summary figures | ⬜ |
-| AC2 | Charts | ⬜ |
+| AC1 | Summary figures | ✅ |
+| AC2 | Charts | ✅ |
 
 ## Implementation approach
 1. Add aggregate queries/views for each summary figure
