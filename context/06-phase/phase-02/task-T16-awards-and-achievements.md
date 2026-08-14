@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T16
 feature: awards
-status: todo
+status: done
 ---
 
 # T16 — Awards & achievements
@@ -15,8 +15,8 @@ Awards & achievements (spec §21): title, recipient/member (optional link), desc
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC1 | Record an award | ⬜ |
-| AC2 | Control public visibility | ⬜ |
+| AC1 | Record an award | ✅ |
+| AC2 | Control public visibility | ✅ |
 
 ## Implementation approach
 1. Add an awards table with optional member link, visibility and document
