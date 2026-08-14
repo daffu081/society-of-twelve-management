@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T02
 feature: members
-status: todo
+status: done
 ---
 
 # T02 — Member roster management
@@ -15,8 +15,8 @@ Build the admin-facing membership roster on top of the full profile (T01): creat
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC4 | Manage the roster | ⬜ |
-| AC5 | List, search and filter | ⬜ |
+| AC4 | Manage the roster | ✅ |
+| AC5 | List, search and filter | ✅ |
 
 ## Implementation approach
 1. Reuse the T01 member fields and add an active/inactive toggle that preserves all records

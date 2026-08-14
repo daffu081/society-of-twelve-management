@@ -5,12 +5,12 @@ tags: [phase-02, phase-summary]
 status: in_progress
 started_at: 2026-08-14
 ac_total: 54
-ac_green: 3
+ac_green: 5
 ---
 
 # Phase 02 — TBD
 
-> **Status: 🔄 IN PROGRESS — 3 / 54 ACs green**
+> **Status: 🔄 IN PROGRESS — 5 / 54 ACs green**
 
 ## What this phase delivers
 
@@ -26,7 +26,7 @@ site), SMS + birthday automation, and the P4 hardening layer (audit, bin, report
 | # | Feature | ACs | Status | What it does | Spec |
 |---|---------|-----|--------|--------------|------|
 | T01 | **member-profile** | 3 | ✅ done | Full member profile + private identity + self-service edit | AC3–AC5 |
-| T02 | **members** | 2 | ⬜ todo | Admin roster CRUD + list/search | AC4–AC5 |
+| T02 | **members** | 2 | ✅ done | Admin roster CRUD + list/search | AC4–AC5 |
 | T03 | **public-directory** | 2 | ⬜ todo | Opt-in privacy-safe public directory | AC1–AC2 |
 | T04 | **profession-fee** | 3 | ⬜ todo | Fee tiers + custom fee + history immutability | AC1–AC3 |
 | T05 | **payments** | 3 | ⬜ todo | Full payment record + receipt trigger + member history | AC3–AC5 |
