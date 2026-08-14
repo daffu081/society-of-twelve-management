@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T22
 feature: reports
-status: todo
+status: done
 ---
 
 # T22 — Reports & exports
@@ -15,8 +15,8 @@ Reports & exports (spec §31): member list, payment history, monthly collection,
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC1 | View reports | ⬜ |
-| AC2 | Export reports | ⬜ |
+| AC1 | View reports | ✅ |
+| AC2 | Export reports | ✅ |
 
 ## Implementation approach
 1. Build report views for each report type
