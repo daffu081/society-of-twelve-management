@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My payments | Society of Twelve</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; color: #17202a; }
+    header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 18px 5%; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo { width: 45px; height: 45px; border-radius: 10px; background: #111827; color: #fff; display: grid; place-items: center; font-weight: bold; }
+    main { padding: 35px 5%; max-width: 720px; margin: auto; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 25px; margin-bottom: 25px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eef1f4; }
+    a { color: #111827; }
+    button.link { background: none; border: 0; color: #64748b; padding: 0; cursor: pointer; font-size: 15px; }
+    nav a { color: #64748b; text-decoration: none; margin-right: 14px; }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">SOT</div>
+    <div><strong>Society of Twelve</strong> — My payments</div>
+  </div>
+  <div>
+    <nav style="display:inline"><a href="profile.html">My profile</a></nav>
+    <button class="link" onclick="logoutMember()">Log out</button>
+  </div>
+</header>
+
+<main>
+  <div class="panel">
+    <h2>My payment history</h2>
+    <table>
+      <thead><tr><th>Receipt</th><th>Amount</th><th>Purpose</th><th>Method</th><th>Date</th></tr></thead>
+      <tbody id="paymentRows"><tr><td colspan="5">Loading...</td></tr></tbody>
+    </table>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
+<script src="member.js"></script>
+<script>
+(async () => {
+  const rows = document.getElementById("paymentRows");
+  const { data: { user } } = await memberClient.auth.getUser();
+  if (!user) { window.location.href = "login.html"; return; }
+
+  // payments_self is scoped server-side to the logged-in member's own rows (AC5)
+  const { data, error } = await memberClient
+    .from("payments_self").select("*").order("payment_date", { ascending: false });
+  if (error) {
+    console.error(error);
+    rows.innerHTML = `<tr><td colspan="5">${error.message || "Could not load payments."}</td></tr>`;
+    return;
+  }
+  rows.innerHTML = data.length
+    ? data.map(p =>
+        `<tr><td><a href="../receipt.html?no=${encodeURIComponent(p.receipt_no)}" target="_blank">${p.receipt_no}</a></td><td>${p.amount}</td><td>${p.purpose}</td><td>${p.payment_method}</td><td>${new Date(p.payment_date).toLocaleDateString()}</td></tr>`
+      ).join("")
+    : `<tr><td colspan="5">No payments recorded yet.</td></tr>`;
+})();
+</script>
+
+</body>
+</html>
