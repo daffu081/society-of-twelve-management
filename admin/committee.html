@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Committee | Society of Twelve</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; color: #17202a; }
+    header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 18px 5%; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo { width: 45px; height: 45px; border-radius: 10px; background: #111827; color: #fff; display: grid; place-items: center; font-weight: bold; }
+    main { padding: 35px 5%; max-width: 900px; margin: auto; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 25px; margin-bottom: 25px; }
+    label { display: block; margin: 12px 0 6px; font-weight: 600; }
+    input, select, textarea { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 15px; font-family: inherit; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+    button { margin-top: 18px; padding: 12px 18px; border: 0; border-radius: 10px; background: #111827; color: #fff; font-size: 15px; cursor: pointer; }
+    button.secondary { background: #e5e7eb; color: #111827; }
+    button.small { margin: 0; padding: 8px 12px; font-size: 13px; }
+    button:disabled { opacity: .6; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eef1f4; }
+    #message { margin-top: 12px; }
+    a.back { color: #64748b; text-decoration: none; }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">SOT</div>
+    <div><strong>Society of Twelve</strong> — Executive Committee</div>
+  </div>
+  <a class="back" href="dashboard.html">&larr; Dashboard</a>
+</header>
+
+<main>
+
+  <div class="panel">
+    <h2 id="formTitle">Add a committee member</h2>
+    <form id="committeeForm">
+      <input id="id" type="hidden">
+      <div class="grid">
+        <div>
+          <label for="name">Name *</label>
+          <input id="name" type="text" required>
+        </div>
+        <div>
+          <label for="position">Position *</label>
+          <input id="position" type="text" required placeholder="President, Secretary…">
+        </div>
+        <div>
+          <label for="year">Year</label>
+          <input id="year" type="text" placeholder="2026 or 2025–2026">
+        </div>
+        <div>
+          <label for="display_order">Display order</label>
+          <input id="display_order" type="number" value="0">
+        </div>
+        <div>
+          <label for="photo_url">Photo URL</label>
+          <input id="photo_url" type="url" placeholder="https://…">
+        </div>
+        <div>
+          <label for="visible">Public visibility</label>
+          <select id="visible">
+            <option value="true">Visible</option>
+            <option value="false">Hidden</option>
+          </select>
+        </div>
+      </div>
+      <label for="short_bio">Short biography</label>
+      <textarea id="short_bio" rows="3"></textarea>
+      <button id="saveButton" type="submit">Save member</button>
+      <button id="cancelButton" type="button" class="secondary" style="display:none">Cancel edit</button>
+    </form>
+    <div id="message"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Committee (public order)</h2>
+    <table>
+      <thead><tr><th>Order</th><th>Name</th><th>Position</th><th>Year</th><th>Visible</th><th></th></tr></thead>
+      <tbody id="committeeRows"><tr><td colspan="6">Loading...</td></tr></tbody>
+    </table>
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
+<script src="admin.js"></script>
+
+<script>
+(async () => {
+  const result = await checkAdminAccess();
+  if (!result) return;
+
+  const rows = document.getElementById("committeeRows");
+  const message = document.getElementById("message");
+  const form = document.getElementById("committeeForm");
+  const cancelButton = document.getElementById("cancelButton");
+  let entries = [];
+
+  function say(ok, text) {
+    message.style.color = ok ? "#16a34a" : "#dc2626";
+    message.textContent = text;
+  }
+
+  function resetForm() {
+    form.reset();
+    document.getElementById("id").value = "";
+    document.getElementById("display_order").value = "0";
+    document.getElementById("formTitle").textContent = "Add a committee member";
+    cancelButton.style.display = "none";
+  }
+  cancelButton.addEventListener("click", resetForm);
+
+  async function loadCommittee() {
+    const { data, error } = await supabaseClient
+      .from("committee_members").select("*")
+      .order("display_order").order("name");
+    if (error) {
+      console.error(error);
+      rows.innerHTML = `<tr><td colspan="6">${error.message || "Could not load the committee."}</td></tr>`;
+      return;
+    }
+    entries = data;
+    rows.innerHTML = data.length
+      ? data.map(c => `<tr data-id="${c.id}">
+          <td>${c.display_order}</td><td>${c.name}</td><td>${c.position}</td>
+          <td>${c.year || "—"}</td><td>${c.visible ? "Visible" : "Hidden"}</td>
+          <td><button type="button" class="small" data-act="edit">Edit</button></td>
+        </tr>`).join("")
+      : `<tr><td colspan="6">No committee members yet.</td></tr>`;
+  }
+
+  rows.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-act='edit']");
+    if (!btn) return;
+    const c = entries.find(x => x.id === btn.closest("tr").dataset.id);
+    if (!c) return;
+    document.getElementById("id").value = c.id;
+    document.getElementById("formTitle").textContent = "Edit " + c.name;
+    for (const k of ["name", "position", "year", "display_order", "photo_url", "short_bio"]) {
+      document.getElementById(k).value = c[k] ?? "";
+    }
+    document.getElementById("visible").value = String(c.visible);
+    cancelButton.style.display = "inline-block";
+    window.scrollTo(0, 0);
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const val = (id) => document.getElementById(id).value.trim();
+    const record = {
+      name: val("name"),
+      position: val("position"),
+      year: val("year") || null,
+      display_order: parseInt(val("display_order") || "0", 10),
+      photo_url: val("photo_url") || null,
+      short_bio: val("short_bio") || null,
+      visible: document.getElementById("visible").value === "true",
+      updated_at: new Date().toISOString(),
+    };
+    const editingId = document.getElementById("id").value;
+    const { error } = editingId
+      ? await supabaseClient.from("committee_members").update(record).eq("id", editingId)
+      : await supabaseClient.from("committee_members").insert(record);
+    if (error) { console.error(error); say(false, error.message || "Could not save."); }
+    else { say(true, editingId ? "Member updated." : "Member added."); resetForm(); await loadCommittee(); }
+  });
+
+  await loadCommittee();
+})();
+</script>
+
+</body>
+</html>
