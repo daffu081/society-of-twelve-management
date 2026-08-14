@@ -104,6 +104,14 @@
       font-size: 14px;
     }
 
+    .chart .bar-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 13px; }
+    .chart .bar-label { width: 90px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chart .bar { height: 16px; background: #111827; border-radius: 4px; min-width: 2px; }
+    .chart .bar.alt { background: #64748b; }
+    .chart .bar-value { color: #17202a; white-space: nowrap; }
+    .mini { font-size: 14px; color: #17202a; margin: 6px 0; }
+    .mini small { color: #64748b; }
+
     footer {
       text-align: center;
       padding: 30px;
@@ -229,6 +237,26 @@
 
   </div>
 
+  <div class="dashboard-grid" style="margin-top:30px" id="statCards">
+    <div class="card"><h3>👥 Members</h3><p id="statMembers">—</p></div>
+    <div class="card"><h3>⏰ Due members</h3><p id="statDue">—</p></div>
+    <div class="card"><h3>💳 Collection</h3><p id="statCollection">—</p></div>
+    <div class="card" id="financeCard" hidden><h3>💰 Finance</h3><p id="statFinance">—</p></div>
+  </div>
+
+  <div class="dashboard-grid" style="margin-top:30px">
+    <div class="card"><h3>📈 Collection (6 months)</h3><div id="chartCollection" class="chart"></div></div>
+    <div class="card" id="chartFinanceCard" hidden><h3>💹 Income vs expense</h3><div id="chartFinance" class="chart"></div></div>
+    <div class="card"><h3>👔 Professions</h3><div id="chartProfessions" class="chart"></div></div>
+    <div class="card"><h3>💳 Payment methods</h3><div id="chartMethods" class="chart"></div></div>
+  </div>
+
+  <div class="dashboard-grid" style="margin-top:30px">
+    <div class="card"><h3>🧾 Recent payments</h3><div id="recentPayments">Loading…</div></div>
+    <div class="card"><h3>📢 Recent notices</h3><div id="recentNotices">Loading…</div></div>
+    <div class="card"><h3>📁 Projects</h3><div id="projectSummary">Loading…</div></div>
+  </div>
+
   <div class="card" style="margin-top:30px">
     <h3>🎂 Upcoming birthdays (next 30 days)</h3>
     <table style="width:100%;border-collapse:collapse">
@@ -311,6 +339,90 @@ document.getElementById("year").textContent =
         ? "Super Admin"
         : "Executive Admin";
 
+  // ---- Summary figures + charts (dashboard feature) ----
+  const canView = (cap) => admin.role === "super_admin" || admin.permissions?.[cap] === true;
+
+  // dependency-free CSS bar chart: rows of label / proportional bar / value
+  function barChart(el, rows, alt) {
+    const max = Math.max(...rows.map(r => Number(r.value)), 1);
+    el.innerHTML = rows.length
+      ? rows.map(r => `<div class="bar-row">
+          <span class="bar-label" title="${r.label}">${r.label}</span>
+          <div class="bar${alt ? " alt" : ""}" style="width:${(Number(r.value) / max) * 60}%"></div>
+          <span class="bar-value">${r.display ?? r.value}</span>
+        </div>`).join("")
+      : `<p style="color:#64748b">No data yet.</p>`;
+  }
+
+  (async () => {
+    // members figures
+    const [{ count: total }, { count: active }] = await Promise.all([
+      supabaseClient.from("members").select("*", { count: "exact", head: true }),
+      supabaseClient.from("members").select("*", { count: "exact", head: true }).eq("active", true),
+    ]);
+    document.getElementById("statMembers").textContent =
+      `${total ?? "—"} total · ${active ?? "—"} active`;
+
+    // collection figures (SQL sums — never JS float money math)
+    const { data: pSum } = await supabaseClient.from("payments_summary").select("*").maybeSingle();
+    document.getElementById("statCollection").textContent = pSum
+      ? `This month BDT ${pSum.month_collection} · today BDT ${pSum.today_collection}`
+      : "needs payments permission";
+
+    // finance figures only for finance-permitted admins (BR1)
+    if (canView("finance_read")) {
+      const { data: f } = await supabaseClient.from("finance_totals").select("*").maybeSingle();
+      if (f) {
+        document.getElementById("financeCard").hidden = false;
+        document.getElementById("statFinance").textContent =
+          `In BDT ${f.total_income} · out BDT ${f.total_expense} · balance BDT ${f.balance}`;
+        document.getElementById("chartFinanceCard").hidden = false;
+        barChart(document.getElementById("chartFinance"), [
+          { label: "Income", value: f.total_income, display: "BDT " + f.total_income },
+          { label: "Expense", value: f.total_expense, display: "BDT " + f.total_expense },
+        ]);
+      }
+    }
+
+    // charts
+    const [byMonth, byMethod, byProf] = await Promise.all([
+      supabaseClient.from("payments_by_month").select("*"),
+      supabaseClient.from("payments_by_method").select("*"),
+      supabaseClient.from("members_by_profession").select("*"),
+    ]);
+    barChart(document.getElementById("chartCollection"),
+      (byMonth.data || []).map(r => ({ label: r.month, value: r.total, display: "BDT " + r.total })));
+    barChart(document.getElementById("chartMethods"),
+      (byMethod.data || []).map(r => ({ label: r.payment_method, value: r.total, display: `BDT ${r.total} (${r.n})` })));
+    barChart(document.getElementById("chartProfessions"),
+      (byProf.data || []).map(r => ({ label: r.profession, value: r.n, display: r.n })), true);
+
+    // recent payments
+    const { data: recent } = await supabaseClient
+      .from("payments").select("receipt_no, amount, payment_date, members(name)")
+      .order("payment_date", { ascending: false }).limit(5);
+    document.getElementById("recentPayments").innerHTML = recent?.length
+      ? recent.map(p => `<div class="mini">${p.members ? p.members.name : "—"} — BDT ${p.amount}
+          <small>${p.receipt_no} · ${new Date(p.payment_date).toLocaleDateString()}</small></div>`).join("")
+      : `<p style="color:#64748b">No payments yet.</p>`;
+
+    // recent notices
+    const { data: recentNotices } = await supabaseClient
+      .from("notices").select("ref_no, title, published").order("created_at", { ascending: false }).limit(3);
+    document.getElementById("recentNotices").innerHTML = recentNotices?.length
+      ? recentNotices.map(n => `<div class="mini">${n.title}
+          <small>${n.ref_no} · ${n.published ? "published" : "draft"}</small></div>`).join("")
+      : `<p style="color:#64748b">No notices yet.</p>`;
+
+    // project summary
+    const { data: projs } = await supabaseClient.from("projects").select("status");
+    if (projs) {
+      const running = projs.filter(p => p.status === "running").length;
+      document.getElementById("projectSummary").innerHTML =
+        `<div class="mini">${running} running · ${projs.length - running} previous</div>`;
+    }
+  })();
+
   // ---- Birthday calendar (birthday feature, AC3) ----
   const birthdayRows = document.getElementById("birthdayRows");
   {
@@ -346,6 +458,9 @@ document.getElementById("year").textContent =
   const { data: dues, error: duesError } = await supabaseClient
     .from("member_dues").select("*").gt("due_amount", 0)
     .order("due_amount", { ascending: false });
+  document.getElementById("statDue").textContent = duesError
+    ? "needs payments permission"
+    : `${(dues || []).length} member(s) due`;
   if (duesError) {
     console.error(duesError);
     dueRows.innerHTML = `<tr><td colspan="5" style="padding:8px">${duesError.message || "Could not load dues."}</td></tr>`;

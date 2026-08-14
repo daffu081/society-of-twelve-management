@@ -97,6 +97,11 @@ features:
     ac_count: 2
     contract_version: 1
     depends_on: [admin-access]
+  dashboard:
+    status: done
+    ac_count: 2
+    contract_version: 1
+    depends_on: [admin-access, members, payments, finance, due-payments, notices, projects, birthday]
   executive-admins:
     status: in_progress
     ac_count: 5

@@ -448,3 +448,36 @@ create policy sms_logs_perm_read on public.sms_logs
 drop policy if exists sms_logs_admin_insert on public.sms_logs;
 create policy sms_logs_admin_insert on public.sms_logs
   for insert with check (public.is_active_admin());
+
+-- Dashboard aggregates (dashboard feature): money summed in SQL (ADR-002),
+-- each view gated on the matching area permission (BR1).
+create or replace view public.payments_summary as
+  select (select coalesce(sum(amount), 0) from public.payments
+            where date_trunc('month', payment_date) = date_trunc('month', now())) as month_collection,
+         (select coalesce(sum(amount), 0) from public.payments
+            where payment_date::date = current_date) as today_collection
+  where public.has_permission('payments_read');
+grant select on public.payments_summary to authenticated;
+
+create or replace view public.payments_by_method as
+  select payment_method, coalesce(sum(amount), 0) as total, count(*) as n
+  from public.payments
+  where public.has_permission('payments_read')
+  group by payment_method;
+grant select on public.payments_by_method to authenticated;
+
+create or replace view public.payments_by_month as
+  select to_char(date_trunc('month', payment_date), 'YYYY-MM') as month,
+         coalesce(sum(amount), 0) as total
+  from public.payments
+  where payment_date > now() - interval '6 months'
+    and public.has_permission('payments_read')
+  group by 1 order by 1;
+grant select on public.payments_by_month to authenticated;
+
+create or replace view public.members_by_profession as
+  select coalesce(profession, 'Unknown') as profession, count(*) as n
+  from public.members
+  where active = true and public.has_permission('members_read')
+  group by 1 order by n desc;
+grant select on public.members_by_profession to authenticated;
