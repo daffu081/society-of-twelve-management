@@ -18,6 +18,14 @@ alter table public.members
 create index if not exists members_active_idx on public.members (active);
 create index if not exists members_profession_idx on public.members (profession);
 create index if not exists members_name_idx on public.members (name);
+-- profession/fee tiers (profession-fee feature): admin-editable categories driving member dues.
+-- members.fee_category holds the category name; members.monthly_fee is a per-member custom
+-- override (null = use the category fee). Payments store their own amount, so editing a fee
+-- here never rewrites history (BR4).
+create table if not exists public.fee_categories (
+ id uuid primary key default gen_random_uuid(), name text unique not null,
+ monthly_fee numeric(12,2) not null, created_at timestamptz default now(), updated_at timestamptz default now()
+);
 create table if not exists public.payments (
  id uuid primary key default gen_random_uuid(), receipt_no text unique not null, member_id uuid references public.members(id),
  amount numeric(12,2) not null, purpose text not null, payment_method text not null, payment_date timestamptz default now(), notes text, created_by uuid, created_at timestamptz default now()

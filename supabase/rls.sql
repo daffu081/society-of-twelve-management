@@ -91,6 +91,12 @@ create trigger members_guard_self_edit
 -- contact, fee or identity field is present, so none is retrievable by the public (AC2).
 -- security_definer (default) so it bypasses base-table RLS; the WHERE clause limits
 -- rows to opted-in members only (AC1/BR2).
+-- Fee categories (profession-fee): admins manage; no anon access.
+alter table public.fee_categories enable row level security;
+drop policy if exists fee_categories_admin_all on public.fee_categories;
+create policy fee_categories_admin_all on public.fee_categories
+  for all using (public.is_active_admin()) with check (public.is_active_admin());
+
 create or replace view public.members_public as
   select name, profession, short_bio, photo_url
   from public.members
