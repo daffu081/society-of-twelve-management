@@ -230,6 +230,18 @@
   </div>
 
   <div class="card" style="margin-top:30px">
+    <h3>🎂 Upcoming birthdays (next 30 days)</h3>
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr>
+        <th style="text-align:left;padding:8px">Member</th>
+        <th style="text-align:left;padding:8px">Birthday</th>
+        <th style="text-align:left;padding:8px">In</th>
+      </tr></thead>
+      <tbody id="birthdayRows"><tr><td colspan="3" style="padding:8px">Loading...</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top:30px">
     <h3>⏰ Due members</h3>
     <table style="width:100%;border-collapse:collapse">
       <thead><tr>
@@ -298,6 +310,32 @@ document.getElementById("year").textContent =
       admin.role === "super_admin"
         ? "Super Admin"
         : "Executive Admin";
+
+  // ---- Birthday calendar (birthday feature, AC3) ----
+  const birthdayRows = document.getElementById("birthdayRows");
+  {
+    const { data: bMembers, error: bErr } = await supabaseClient
+      .from("members").select("member_id, name, dob").eq("active", true).not("dob", "is", null);
+    if (bErr) {
+      console.error(bErr);
+      birthdayRows.innerHTML = `<tr><td colspan="3" style="padding:8px">${bErr.message || "Could not load birthdays."}</td></tr>`;
+    } else {
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const upcoming = bMembers.map(m => {
+        const [ , mo, da ] = m.dob.split("-").map(Number);
+        let next = new Date(today.getFullYear(), mo - 1, da);
+        if (next < today) next = new Date(today.getFullYear() + 1, mo - 1, da);
+        return { ...m, next, days: Math.round((next - today) / 86400000) };
+      }).filter(m => m.days <= 30).sort((a, b) => a.days - b.days);
+      birthdayRows.innerHTML = upcoming.length
+        ? upcoming.map(m => `<tr>
+            <td style="padding:8px">${m.member_id} — ${m.name}</td>
+            <td style="padding:8px">${m.next.toLocaleDateString()}</td>
+            <td style="padding:8px">${m.days === 0 ? "🎂 today" : m.days + " day(s)"}</td>
+          </tr>`).join("")
+        : `<tr><td colspan="3" style="padding:8px">No birthdays in the next 30 days.</td></tr>`;
+    }
+  }
 
   // ---- Due members (due-payments feature) ----
   const dueRows = document.getElementById("dueRows");

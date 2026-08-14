@@ -4,26 +4,33 @@ spec_version: 1
 feature: birthday
 file_type: business-context
 contract_version: 1
-status: planned
+status: in_progress
 depends_on: [sms, members]
-last_review: 2026-08-13
+last_review: 2026-08-14
 frozen: false
 tags: [birthday, business-context]
 ---
 
 # Birthday automation — business context
 
-> **Blocked:** depends on the `sms` feature (and therefore an SMS provider).
+> **Provider still not contracted** — the automation is built and starts delivering once the
+> shared SMS provider secrets are configured.
 
 ## Goal
 Automatically send a birthday greeting to each member on their birthday, once per year.
 
 ## User stories
 - US1: As the society, members receive a birthday greeting automatically.
+- US3: As an admin, I can see a birthday calendar/list, so that I know whose birthday is coming.
+- US4: As the organization, birthday greetings go out automatically, so that no one is missed.
 
 ## Business rules
 - BR1: A member gets at most one birthday greeting per year (`birthday_logs` unique on member+year).
 - BR2: Greetings go out via the `sms` feature.
+- BR3: A scheduled daily job checks members whose birthday matches the current date and sends the greeting automatically — never relying on manual execution.
+- BR4: The greeting includes the actual member's name.
+- BR5: A yearly birthday delivery log prevents duplicate messages to the same member in the same year.
+- BR6: The birthday message content stays editable by admins.
 
 ## What this feature owns
 - Birthday detection and the `birthday_logs` idempotency record.
@@ -47,6 +54,18 @@ Automatically send a birthday greeting to each member on their birthday, once pe
 - **Given**: a member due a greeting
 - **When**: the job sends via `sms`
 - **Then**: a `birthday_logs` row (member, year, sms_log) prevents a duplicate send
+
+### AC3: Admin birthday calendar
+- **Trace**: US3
+- **Given**: members with dates of birth
+- **When**: an admin opens the birthday calendar/list
+- **Then**: upcoming birthdays are shown.
+
+### AC4: Automatic, once-per-year greeting
+- **Trace**: US4, BR3, BR4, BR5
+- **Given**: today matches a member's birthday
+- **When**: the daily job runs
+- **Then**: a birthday SMS with the member's real name is sent automatically, and the yearly log prevents a duplicate for that member that year.
 
 ### Edge & error cases
 - Member without `dob` is skipped.
