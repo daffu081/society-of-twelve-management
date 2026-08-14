@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T24
 feature: bin
-status: todo
+status: done
 ---
 
 # T24 — Bin / trash
@@ -15,8 +15,8 @@ Bin/Trash (spec §27): important records use soft deletion and stay recoverable 
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC1 | Deleted items are recoverable | ⬜ |
-| AC2 | Automatic cleanup after 30 days | ⬜ |
+| AC1 | Deleted items are recoverable | ✅ |
+| AC2 | Automatic cleanup after 30 days | ✅ |
 
 ## Implementation approach
 1. Add shared soft-delete metadata (deleted_at, expires_at) convention

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bin | Society of Twelve</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; color: #17202a; }
+    header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 18px 5%; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo { width: 45px; height: 45px; border-radius: 10px; background: #111827; color: #fff; display: grid; place-items: center; font-weight: bold; }
+    main { padding: 35px 5%; max-width: 1000px; margin: auto; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 25px; margin-bottom: 25px; }
+    .toolbar { display: flex; gap: 16px; margin-bottom: 16px; }
+    select { padding: 10px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eef1f4; font-size: 14px; }
+    th { background: #f9fafb; }
+    button { margin: 0; padding: 8px 12px; border: 0; border-radius: 8px; background: #111827; color: #fff; font-size: 13px; cursor: pointer; }
+    button.danger { background: #dc2626; }
+    button:disabled { opacity: .6; }
+    .expiring { color: #dc2626; }
+    #message { margin-top: 12px; }
+    a.back { color: #64748b; text-decoration: none; }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">SOT</div>
+    <div><strong>Society of Twelve</strong> — Bin / Trash</div>
+  </div>
+  <a class="back" href="dashboard.html">&larr; Dashboard</a>
+</header>
+
+<main>
+  <div class="panel">
+    <p style="color:#64748b">Soft-deleted records, recoverable for 30 days. Only a Super Admin can
+      restore or permanently delete. Items past 30 days are purged automatically.</p>
+    <div class="toolbar">
+      <select id="typeFilter"><option value="">All types</option></select>
+    </div>
+    <table>
+      <thead><tr><th>Type</th><th>Item</th><th>Deleted</th><th>Expires</th><th></th></tr></thead>
+      <tbody id="binRows"><tr><td colspan="5">Loading...</td></tr></tbody>
+    </table>
+    <div id="message"></div>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
+<script src="admin.js"></script>
+
+<script>
+(async () => {
+  const result = await checkAdminAccess();
+  if (!result) return;
+  const { admin } = result;
+
+  // Super Admin only (BR3) — RLS also restricts read/restore/purge server-side.
+  if (admin.role !== "super_admin") {
+    document.querySelector("main").innerHTML =
+      `<div class="panel">Only a Super Admin can access the Bin.</div>`;
+    return;
+  }
+
+  const rows = document.getElementById("binRows");
+  const message = document.getElementById("message");
+  const typeFilter = document.getElementById("typeFilter");
+  let items = [];
+
+  function say(ok, text) {
+    message.style.color = ok ? "#16a34a" : "#dc2626";
+    message.textContent = text;
+  }
+
+  const label = (b) => b.snapshot?.title || b.snapshot?.name || b.snapshot?.member_id || b.entity_id.slice(0, 8);
+
+  async function load() {
+    let q = supabaseClient.from("bin").select("*").order("deleted_at", { ascending: false });
+    if (typeFilter.value) q = q.eq("entity_type", typeFilter.value);
+    const { data, error } = await q;
+    if (error) {
+      console.error(error);
+      rows.innerHTML = `<tr><td colspan="5">${error.message || "Could not load the Bin."}</td></tr>`;
+      return;
+    }
+    items = data;
+    const types = [...new Set(data.map(b => b.entity_type))].sort();
+    if (typeFilter.options.length <= 1) {
+      typeFilter.innerHTML = `<option value="">All types</option>` +
+        types.map(t => `<option>${t}</option>`).join("");
+    }
+    const now = Date.now();
+    rows.innerHTML = data.length
+      ? data.map(b => {
+          const days = Math.ceil((new Date(b.expires_at) - now) / 86400000);
+          return `<tr data-id="${b.id}">
+            <td>${b.entity_type}</td><td>${label(b)}</td>
+            <td>${new Date(b.deleted_at).toLocaleDateString()}</td>
+            <td class="${days <= 3 ? "expiring" : ""}">${new Date(b.expires_at).toLocaleDateString()} (${days}d)</td>
+            <td style="white-space:nowrap">
+              <button type="button" data-act="restore">Restore</button>
+              <button type="button" class="danger" data-act="purge">Delete forever</button>
+            </td></tr>`;
+        }).join("")
+      : `<tr><td colspan="5">Bin is empty.</td></tr>`;
+  }
+
+  rows.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-act]");
+    if (!btn) return;
+    const b = items.find(x => x.id === btn.closest("tr").dataset.id);
+    if (!b) return;
+    btn.disabled = true;
+
+    if (btn.dataset.act === "restore") {
+      // re-insert the snapshot into its source table, then drop the bin row
+      const { error: insErr } = await supabaseClient.from(b.entity_type).insert(b.snapshot);
+      if (insErr) { console.error(insErr); say(false, insErr.message || "Restore failed."); btn.disabled = false; return; }
+    } else if (!confirm(`Permanently delete this ${b.entity_type}? This cannot be undone.`)) {
+      btn.disabled = false; return;
+    }
+    const { error } = await supabaseClient.from("bin").delete().eq("id", b.id);
+    if (error) { console.error(error); say(false, error.message || "Bin update failed."); }
+    else { say(true, btn.dataset.act === "restore" ? `Restored ${b.entity_type}.` : "Permanently deleted."); await load(); }
+    btn.disabled = false;
+  });
+
+  typeFilter.addEventListener("change", load);
+  await load();
+})();
+</script>
+
+</body>
+</html>
