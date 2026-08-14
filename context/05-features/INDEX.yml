@@ -9,7 +9,7 @@ features:
     depends_on: []
   public-site:
     status: done
-    ac_count: 3
+    ac_count: 4
     contract_version: 1
     depends_on: [members, notices, projects, mahfil]
   member-profile:

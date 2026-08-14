@@ -6,7 +6,7 @@ file_type: business-context
 contract_version: 1
 status: in_progress
 depends_on: []
-last_review: 2026-08-13
+last_review: 2026-08-14
 frozen: false
 tags: [public-site, business-context]
 ---
@@ -20,12 +20,15 @@ surfacing running notices, projects, mahfil and the consenting-members directory
 ## User stories
 - US1: As a visitor, I can read about the society, its projects, mahfil, notices, rules and contact.
 - US2: As the society, I want running notices and activity to appear publicly (planned).
+- US4: As a visitor, I can browse the organization's public pages, so that I can learn about it and its activities.
 
 ## Business rules
 - BR1: Content is Bengali-first.
 - BR2: Only members who opted in (`show_on_public_directory`) appear publicly.
 - BR3: The footer shows the developer credit "Developed By Sabbir Ahmed Sakib".
 - BR4: The Society of Twelve logo/branding is used consistently across the public site.
+- BR5 (phase-02 BR4): Public pages: Home, About Us, Area History, Projects, Mahfil, Notices, Awards & Achievements, Rules & Regulations, Executive Committee, Founding Members, Technical Team, Public Member Directory, and organization contact/footer.
+- BR6 (phase-02 BR5): Public pages show only safe, published content — never private member, payment or finance data.
 
 ## What this feature owns
 - The public landing page and its static sections.
@@ -56,5 +59,11 @@ surfacing running notices, projects, mahfil and the consenting-members directory
 - **When**: the visitor views it
 - **Then**: the footer shows "Developed By Sabbir Ahmed Sakib" and the page uses the Society of Twelve logo/branding
 
+### AC4: Full public page set
+- **Trace**: US4, BR4, BR5
+- **Given**: a public visitor
+- **When**: they navigate the site
+- **Then**: they can reach Home, About Us, Area History, Projects, Mahfil, Notices, Awards, Rules, Executive Committee, Founding Members, Technical Team, Public Member Directory and contact/footer — each showing only safe published content.
+
 ### Edge & error cases
-- Dynamic content (running notices/projects, public directory) is **not yet wired** — currently placeholder copy.
+- The homepage running-notice banner falls back to placeholder copy when no running notice exists.
