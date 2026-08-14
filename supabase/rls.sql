@@ -19,6 +19,17 @@ create or replace function public.is_active_admin() returns boolean
   );
 $$;
 
+-- Capability check (executive-admins permission matrix): super_admin has everything;
+-- an executive admin needs the capability flag in admins.permissions jsonb (ADR-001).
+create or replace function public.has_permission(cap text) returns boolean
+  language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.admins a
+    where a.auth_user_id = auth.uid() and a.active = true
+      and (a.role = 'super_admin' or coalesce((a.permissions ->> cap)::boolean, false))
+  );
+$$;
+
 alter table public.members enable row level security;
 
 -- Admins: full access. Anon has no policy → RLS denies it entirely.
@@ -146,6 +157,27 @@ create or replace view public.member_dues as
   ) p on true
   where m.active = true and public.is_active_admin();
 grant select on public.member_dues to authenticated;
+
+-- Finance (finance feature): never public (BR6); executives need the explicit
+-- 'finance' permission (BR7). super_admin always passes has_permission().
+alter table public.income enable row level security;
+alter table public.expenses enable row level security;
+drop policy if exists income_finance_all on public.income;
+create policy income_finance_all on public.income
+  for all using (public.has_permission('finance')) with check (public.has_permission('finance'));
+drop policy if exists expenses_finance_all on public.expenses;
+create policy expenses_finance_all on public.expenses
+  for all using (public.has_permission('finance')) with check (public.has_permission('finance'));
+
+-- Cumulative totals computed in SQL (never JS floats — ADR-002); rows only for
+-- finance-permitted admins.
+create or replace view public.finance_totals as
+  select (select coalesce(sum(amount), 0) from public.income)   as total_income,
+         (select coalesce(sum(amount), 0) from public.expenses) as total_expense,
+         (select coalesce(sum(amount), 0) from public.income)
+       - (select coalesce(sum(amount), 0) from public.expenses) as balance
+  where public.has_permission('finance');
+grant select on public.finance_totals to authenticated;
 
 -- Fee categories (profession-fee): admins manage; no anon access.
 alter table public.fee_categories enable row level security;

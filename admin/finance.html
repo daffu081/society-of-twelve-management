@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finance | Society of Twelve</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; color: #17202a; }
+    header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 18px 5%; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo { width: 45px; height: 45px; border-radius: 10px; background: #111827; color: #fff; display: grid; place-items: center; font-weight: bold; }
+    main { padding: 35px 5%; max-width: 900px; margin: auto; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 25px; margin-bottom: 25px; }
+    .totals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .totals .panel { text-align: center; margin: 0; }
+    .totals h3 { margin: 0 0 6px; color: #64748b; font-size: 14px; }
+    .totals .n { font-size: 24px; font-weight: bold; }
+    label { display: block; margin: 12px 0 6px; font-weight: 600; }
+    input, select, textarea { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 15px; font-family: inherit; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+    button { margin-top: 18px; padding: 12px 18px; border: 0; border-radius: 10px; background: #111827; color: #fff; font-size: 15px; cursor: pointer; }
+    button:disabled { opacity: .6; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eef1f4; }
+    #message { margin-top: 12px; }
+    a.back { color: #64748b; text-decoration: none; }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">SOT</div>
+    <div><strong>Society of Twelve</strong> — Finance</div>
+  </div>
+  <a class="back" href="dashboard.html">&larr; Dashboard</a>
+</header>
+
+<main>
+
+  <div class="totals" style="margin-bottom:25px">
+    <div class="panel"><h3>Total income</h3><div class="n" id="totalIncome">—</div></div>
+    <div class="panel"><h3>Total expense</h3><div class="n" id="totalExpense">—</div></div>
+    <div class="panel"><h3>Balance</h3><div class="n" id="balance">—</div></div>
+  </div>
+
+  <div class="panel">
+    <h2>Record income</h2>
+    <form id="incomeForm">
+      <div class="grid">
+        <div>
+          <label for="income_source">Source *</label>
+          <select id="income_source" required>
+            <option value="">— select —</option>
+            <option>Monthly Subscription</option>
+            <option>Project Donation</option>
+            <option>Mahfil Donation</option>
+            <option>Special Donation</option>
+            <option>Other Income</option>
+            <option>Historical/Offline Collection</option>
+          </select>
+        </div>
+        <div>
+          <label for="income_amount">Amount (BDT) *</label>
+          <input id="income_amount" type="number" step="0.01" min="0.01" required>
+        </div>
+        <div>
+          <label for="income_date">Date</label>
+          <input id="income_date" type="date">
+        </div>
+        <div>
+          <label for="income_notes">Notes</label>
+          <input id="income_notes" type="text">
+        </div>
+      </div>
+      <button type="submit">Save income</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>Record expense</h2>
+    <form id="expenseForm">
+      <div class="grid">
+        <div>
+          <label for="expense_category">Category *</label>
+          <input id="expense_category" type="text" required placeholder="Event, Charity, Office…">
+        </div>
+        <div>
+          <label for="expense_amount">Amount (BDT) *</label>
+          <input id="expense_amount" type="number" step="0.01" min="0.01" required>
+        </div>
+        <div>
+          <label for="expense_date">Date</label>
+          <input id="expense_date" type="date">
+        </div>
+        <div>
+          <label for="expense_notes">Description</label>
+          <input id="expense_notes" type="text">
+        </div>
+      </div>
+      <button type="submit">Save expense</button>
+    </form>
+  </div>
+
+  <div id="message"></div>
+
+  <div class="panel">
+    <h2>Recent entries</h2>
+    <table>
+      <thead><tr><th>Type</th><th>Source / Category</th><th>Amount</th><th>Date</th><th>Notes</th></tr></thead>
+      <tbody id="entryRows"><tr><td colspan="5">Loading...</td></tr></tbody>
+    </table>
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
+<script src="admin.js"></script>
+
+<script>
+(async () => {
+  const result = await checkAdminAccess();
+  if (!result) return;
+  const { admin } = result;
+
+  // finance permission (BR7): super_admin, or executive with permissions.finance = true.
+  // RLS enforces the same server-side; this only gives a friendly early message.
+  if (!(admin.role === "super_admin" || admin.permissions?.finance === true)) {
+    document.querySelector("main").innerHTML =
+      `<div class="panel">You do not have finance permission. Ask a super admin to grant it.</div>`;
+    return;
+  }
+
+  const message = document.getElementById("message");
+  const rows = document.getElementById("entryRows");
+
+  function say(ok, text) {
+    message.style.color = ok ? "#16a34a" : "#dc2626";
+    message.textContent = text;
+  }
+
+  async function loadTotals() {
+    const { data, error } = await supabaseClient.from("finance_totals").select("*").maybeSingle();
+    if (error || !data) { console.error(error); return; }
+    document.getElementById("totalIncome").textContent = "BDT " + data.total_income;
+    document.getElementById("totalExpense").textContent = "BDT " + data.total_expense;
+    document.getElementById("balance").textContent = "BDT " + data.balance;
+  }
+
+  async function loadEntries() {
+    const [inc, exp] = await Promise.all([
+      supabaseClient.from("income").select("source, amount, income_date, notes").order("created_at", { ascending: false }).limit(20),
+      supabaseClient.from("expenses").select("category, amount, expense_date, notes").order("created_at", { ascending: false }).limit(20),
+    ]);
+    if (inc.error || exp.error) {
+      console.error(inc.error || exp.error);
+      rows.innerHTML = `<tr><td colspan="5">Could not load entries.</td></tr>`;
+      return;
+    }
+    const entries = [
+      ...inc.data.map(r => ({ type: "Income", label: r.source, amount: r.amount, date: r.income_date, notes: r.notes })),
+      ...exp.data.map(r => ({ type: "Expense", label: r.category, amount: r.amount, date: r.expense_date, notes: r.notes })),
+    ].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    rows.innerHTML = entries.length
+      ? entries.map(e =>
+          `<tr><td>${e.type}</td><td>${e.label}</td><td>${e.amount}</td><td>${e.date || "—"}</td><td>${e.notes || "—"}</td></tr>`
+        ).join("")
+      : `<tr><td colspan="5">No entries yet.</td></tr>`;
+  }
+
+  document.getElementById("incomeForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const { error } = await supabaseClient.from("income").insert({
+      source: document.getElementById("income_source").value,
+      amount: document.getElementById("income_amount").value.trim(), // string → numeric(12,2)
+      income_date: document.getElementById("income_date").value || undefined,
+      notes: document.getElementById("income_notes").value.trim() || null,
+      created_by: admin.id,
+    });
+    if (error) { console.error(error); say(false, error.message || "Could not save income."); return; }
+    say(true, "Income saved.");
+    e.target.reset();
+    await Promise.all([loadTotals(), loadEntries()]);
+  });
+
+  document.getElementById("expenseForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const { error } = await supabaseClient.from("expenses").insert({
+      category: document.getElementById("expense_category").value.trim(),
+      amount: document.getElementById("expense_amount").value.trim(), // string → numeric(12,2)
+      expense_date: document.getElementById("expense_date").value || undefined,
+      notes: document.getElementById("expense_notes").value.trim() || null,
+      created_by: admin.id,
+    });
+    if (error) { console.error(error); say(false, error.message || "Could not save expense."); return; }
+    say(true, "Expense saved.");
+    e.target.reset();
+    await Promise.all([loadTotals(), loadEntries()]);
+  });
+
+  await Promise.all([loadTotals(), loadEntries()]);
+})();
+</script>
+
+</body>
+</html>
