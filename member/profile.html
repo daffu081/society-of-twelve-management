@@ -79,6 +79,10 @@
         <input id="interests" type="text" value="${fromCsv(member.interests)}">
         <label for="short_bio">Short bio</label>
         <textarea id="short_bio" rows="3">${member.short_bio ?? ""}</textarea>
+        <label style="display:flex;align-items:center;gap:8px;font-weight:400;margin-top:16px">
+          <input id="show_on_public_directory" type="checkbox" style="width:auto" ${member.show_on_public_directory ? "checked" : ""}>
+          Show me on the public directory
+        </label>
         <button id="saveButton" type="submit">Save my details</button>
       </form>
       <div id="message"></div>
@@ -97,6 +101,7 @@
       skills: csv(val("skills")),
       interests: csv(val("interests")),
       short_bio: val("short_bio") || null,
+      show_on_public_directory: document.getElementById("show_on_public_directory").checked,
     }).eq("id", member.id);
     if (error) {
       console.error(error);

@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T03
 feature: public-directory
-status: todo
+status: done
 ---
 
 # T03 — Public member directory
@@ -15,8 +15,8 @@ Expose an opt-in, privacy-safe public directory (spec §7). Members control a Sh
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC1 | Member controls public visibility | ⬜ |
-| AC2 | Directory exposes only safe fields | ⬜ |
+| AC1 | Member controls public visibility | ✅ |
+| AC2 | Directory exposes only safe fields | ✅ |
 
 ## Implementation approach
 1. Add a show_on_public_directory flag to members (member-controlled)

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Member Directory | Society of Twelve</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .dir-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; }
+    .dir-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; text-align: center; }
+    .dir-card img { width: 88px; height: 88px; border-radius: 50%; object-fit: cover; background: #eef1f4; }
+    .dir-card .avatar { width: 88px; height: 88px; border-radius: 50%; margin: 0 auto; background: #111827; color: #fff; display: grid; place-items: center; font-size: 28px; font-weight: bold; }
+    .dir-card h3 { margin: 12px 0 2px; }
+    .dir-card .profession { color: #64748b; margin: 0; }
+    .dir-card .bio { font-size: 14px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="logo">SOT</div><div><h1>Member Directory</h1><p>Society of Twelve</p></div></div>
+  <nav><a href="index.html">← Home</a></nav>
+</header>
+<main>
+  <section>
+    <h2>Members</h2>
+    <p>Members who have opted in to appear publicly.</p>
+    <div id="grid" class="dir-grid"><p>Loading…</p></div>
+  </section>
+</main>
+<footer><strong>Society of Twelve</strong><div>© <span id="year"></span> Society of Twelve — All Rights Reserved.</div></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+  const { createClient } = window.supabase;
+  const client = createClient(window.SOT_CONFIG.SUPABASE_URL, window.SOT_CONFIG.SUPABASE_ANON_KEY);
+  const grid = document.getElementById("grid");
+
+  (async () => {
+    // Reads only members_public — a safe view with no private/contact/finance columns (AC2).
+    const { data, error } = await client.from("members_public").select("*").order("name");
+    if (error) {
+      console.error(error);
+      grid.innerHTML = `<p>${error.message || "Could not load the directory."}</p>`;
+      return;
+    }
+    if (!data.length) { grid.innerHTML = `<p>No members are listed yet.</p>`; return; }
+    grid.innerHTML = data.map(m => {
+      const avatar = m.photo_url
+        ? `<img src="${m.photo_url}" alt="${m.name}">`
+        : `<div class="avatar">${(m.name || "?").trim().charAt(0).toUpperCase()}</div>`;
+      return `<article class="dir-card">
+        ${avatar}
+        <h3>${m.name || "—"}</h3>
+        <p class="profession">${m.profession || ""}</p>
+        ${m.short_bio ? `<p class="bio">${m.short_bio}</p>` : ""}
+      </article>`;
+    }).join("");
+  })();
+</script>
+</body>
+</html>
