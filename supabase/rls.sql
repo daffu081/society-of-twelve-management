@@ -541,3 +541,44 @@ create or replace view public.report_birthday_log as
   from public.birthday_logs b left join public.members m on m.id = b.member_id
   where public.has_permission('reports_read') and public.has_permission('sms_read');
 grant select on public.report_birthday_log to authenticated;
+
+-- Audit log (audit feature): any active admin may append (their own actions);
+-- only Super Admins may read the trail (BR — Super-Admin accountability view).
+-- A generic trigger captures inserts/updates/deletes on the sensitive tables
+-- with actor + old/new snapshots (BR2/BR3). auth.uid() resolves the actor.
+alter table public.audit_log enable row level security;
+drop policy if exists audit_admin_insert on public.audit_log;
+create policy audit_admin_insert on public.audit_log
+  for insert with check (public.is_active_admin());
+drop policy if exists audit_super_read on public.audit_log;
+create policy audit_super_read on public.audit_log
+  for select using (public.is_super_admin());
+
+create or replace function public.audit_capture() returns trigger
+  language plpgsql security definer set search_path = public as $$
+declare a record; aid uuid; aname text;
+begin
+  select id, name into aid, aname from public.admins where auth_user_id = auth.uid() limit 1;
+  insert into public.audit_log (actor_admin_id, actor_name, action, entity_type, entity_id, old_values, new_values)
+  values (
+    aid, aname, tg_op, tg_table_name,
+    coalesce((case when tg_op = 'DELETE' then old.id else new.id end), null),
+    case when tg_op in ('UPDATE','DELETE') then to_jsonb(old) end,
+    case when tg_op in ('INSERT','UPDATE') then to_jsonb(new) end
+  );
+  if tg_op = 'DELETE' then return old; end if;
+  return new;
+end;
+$$;
+
+-- Sensitive tables to audit (BR3): permission changes, member changes, payments,
+-- finance, sms sends, deletions/restores (bin). Idempotent re-create.
+do $$
+declare t text;
+begin
+  foreach t in array array['admins','members','payments','income','expenses','sms_logs','bin'] loop
+    execute format('drop trigger if exists audit_%1$s on public.%1$s', t);
+    execute format('create trigger audit_%1$s after insert or update or delete on public.%1$s
+                    for each row execute function public.audit_capture()', t);
+  end loop;
+end $$;

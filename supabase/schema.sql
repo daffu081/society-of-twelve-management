@@ -121,3 +121,11 @@ create table if not exists public.rule_versions (
 );
 -- sms (T19): recipient snapshot for the log (BR10) — member mobile at send time
 alter table public.sms_logs add column if not exists recipient_mobile text;
+-- audit log (T23): accountability trail of important administrative actions
+create table if not exists public.audit_log (
+ id uuid primary key default gen_random_uuid(),
+ actor_admin_id uuid, actor_name text, action text not null,
+ entity_type text, entity_id uuid, old_values jsonb, new_values jsonb,
+ created_at timestamptz default now()
+);
+create index if not exists audit_log_created_idx on public.audit_log (created_at desc);

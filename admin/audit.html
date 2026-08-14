@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audit Log | Society of Twelve</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; color: #17202a; }
+    header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 18px 5%; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo { width: 45px; height: 45px; border-radius: 10px; background: #111827; color: #fff; display: grid; place-items: center; font-weight: bold; }
+    main { padding: 35px 5%; max-width: 1000px; margin: auto; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 25px; margin-bottom: 25px; }
+    .toolbar { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+    select, input { padding: 10px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #eef1f4; font-size: 13px; vertical-align: top; }
+    th { background: #f9fafb; }
+    .action { font-weight: 700; }
+    .action.DELETE { color: #dc2626; }
+    .action.INSERT { color: #16a34a; }
+    details { cursor: pointer; }
+    pre { white-space: pre-wrap; word-break: break-word; font-size: 12px; background: #f9fafb; padding: 8px; border-radius: 6px; margin: 4px 0 0; }
+    a.back { color: #64748b; text-decoration: none; }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">SOT</div>
+    <div><strong>Society of Twelve</strong> — Audit Log</div>
+  </div>
+  <a class="back" href="dashboard.html">&larr; Dashboard</a>
+</header>
+
+<main>
+  <div class="panel">
+    <div class="toolbar">
+      <select id="entityFilter">
+        <option value="">All tables</option>
+        <option>admins</option><option>members</option><option>payments</option>
+        <option>income</option><option>expenses</option><option>sms_logs</option><option>bin</option>
+      </select>
+      <select id="actionFilter">
+        <option value="">All actions</option>
+        <option>INSERT</option><option>UPDATE</option><option>DELETE</option>
+      </select>
+    </div>
+    <table>
+      <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Table</th><th>Record</th><th>Change</th></tr></thead>
+      <tbody id="auditRows"><tr><td colspan="6">Loading...</td></tr></tbody>
+    </table>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
+<script src="admin.js"></script>
+
+<script>
+(async () => {
+  const result = await checkAdminAccess();
+  if (!result) return;
+  const { admin } = result;
+
+  // Super Admin only — RLS also blocks non-supers server-side.
+  if (admin.role !== "super_admin") {
+    document.querySelector("main").innerHTML =
+      `<div class="panel">Only a Super Admin can view the audit log.</div>`;
+    return;
+  }
+
+  const rows = document.getElementById("auditRows");
+  const entityFilter = document.getElementById("entityFilter");
+  const actionFilter = document.getElementById("actionFilter");
+
+  function diff(o, n) {
+    if (!o && n) return "created";
+    if (o && !n) return "deleted";
+    if (!o || !n) return "";
+    const changed = Object.keys(n).filter(k => JSON.stringify(o[k]) !== JSON.stringify(n[k]) && k !== "updated_at");
+    return changed.length
+      ? `<details><summary>${changed.length} field(s)</summary><pre>${changed.map(k => `${k}: ${JSON.stringify(o[k])} → ${JSON.stringify(n[k])}`).join("\n")}</pre></details>`
+      : "—";
+  }
+
+  async function load() {
+    let q = supabaseClient.from("audit_log").select("*")
+      .order("created_at", { ascending: false }).limit(200);
+    if (entityFilter.value) q = q.eq("entity_type", entityFilter.value);
+    if (actionFilter.value) q = q.eq("action", actionFilter.value);
+    const { data, error } = await q;
+    if (error) {
+      console.error(error);
+      rows.innerHTML = `<tr><td colspan="6">${error.message || "Could not load the audit log."}</td></tr>`;
+      return;
+    }
+    rows.innerHTML = data.length
+      ? data.map(a => `<tr>
+          <td>${new Date(a.created_at).toLocaleString()}</td>
+          <td>${a.actor_name || "—"}</td>
+          <td class="action ${a.action}">${a.action}</td>
+          <td>${a.entity_type || "—"}</td>
+          <td>${a.entity_id ? a.entity_id.slice(0, 8) : "—"}</td>
+          <td>${diff(a.old_values, a.new_values)}</td>
+        </tr>`).join("")
+      : `<tr><td colspan="6">No audit entries yet.</td></tr>`;
+  }
+
+  entityFilter.addEventListener("change", load);
+  actionFilter.addEventListener("change", load);
+  await load();
+})();
+</script>
+
+</body>
+</html>
