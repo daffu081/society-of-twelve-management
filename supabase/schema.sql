@@ -101,3 +101,9 @@ create table if not exists public.founding_members (
  short_bio text, photo_url text, display_order integer default 0,
  created_at timestamptz default now(), updated_at timestamptz default now()
 );
+-- awards (T16): achievements, optional member link, admin-controlled visibility
+create table if not exists public.awards (
+ id uuid primary key default gen_random_uuid(), title text not null, member_id uuid references public.members(id),
+ recipient_name text, description text, award_date date, image_url text,
+ visible boolean default false, created_at timestamptz default now(), updated_at timestamptz default now()
+);

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Awards | Society of Twelve</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .award { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+    .award img { max-width: 100%; border-radius: 10px; margin-top: 10px; }
+    .award .meta { color: #64748b; font-size: 13px; }
+  </style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="logo">SOT</div><div><h1>Awards &amp; Achievements</h1><p>Society of Twelve</p></div></div>
+  <nav><a href="index.html">← Home</a></nav>
+</header>
+<main>
+  <section>
+    <h2>Achievements</h2>
+    <div id="list"><p>Loading…</p></div>
+  </section>
+</main>
+<footer><strong>Society of Twelve</strong><div>© <span id="year"></span> Society of Twelve — All Rights Reserved.</div></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+  const { createClient } = window.supabase;
+  const client = createClient(window.SOT_CONFIG.SUPABASE_URL, window.SOT_CONFIG.SUPABASE_ANON_KEY);
+  const list = document.getElementById("list");
+
+  (async () => {
+    // RLS returns only visible awards to the public (AC2)
+    const { data, error } = await client
+      .from("awards")
+      .select("title, recipient_name, description, award_date, image_url")
+      .order("award_date", { ascending: false, nullsFirst: false });
+    if (error) {
+      console.error(error);
+      list.innerHTML = `<p>${error.message || "Could not load awards."}</p>`;
+      return;
+    }
+    if (!data.length) { list.innerHTML = `<p>No awards published yet.</p>`; return; }
+    list.innerHTML = data.map(a => `
+      <article class="award">
+        <h3>${a.title}</h3>
+        <div class="meta">${a.recipient_name || ""}${a.award_date ? " · " + a.award_date : ""}</div>
+        ${a.description ? `<p>${a.description}</p>` : ""}
+        ${a.image_url ? `<img src="${a.image_url}" alt="${a.title}">` : ""}
+      </article>`).join("");
+  })();
+</script>
+</body>
+</html>

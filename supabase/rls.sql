@@ -377,3 +377,19 @@ drop policy if exists founding_perm_update on public.founding_members;
 create policy founding_perm_update on public.founding_members
   for update using (public.has_permission('committee_write'))
   with check (public.has_permission('committee_write'));
+
+-- Awards (awards feature): public reads visible awards; writes need awards_write.
+alter table public.awards enable row level security;
+drop policy if exists awards_public_read on public.awards;
+create policy awards_public_read on public.awards
+  for select using (visible = true);
+drop policy if exists awards_perm_read on public.awards;
+create policy awards_perm_read on public.awards
+  for select using (public.has_permission('awards_read'));
+drop policy if exists awards_perm_insert on public.awards;
+create policy awards_perm_insert on public.awards
+  for insert with check (public.has_permission('awards_write'));
+drop policy if exists awards_perm_update on public.awards;
+create policy awards_perm_update on public.awards
+  for update using (public.has_permission('awards_write'))
+  with check (public.has_permission('awards_write'));
