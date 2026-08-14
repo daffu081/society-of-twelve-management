@@ -108,6 +108,18 @@ create or replace view public.payments_self as
   where m.email is not null and lower(m.email) = lower(auth.jwt() ->> 'email');
 grant select on public.payments_self to authenticated;
 
+-- Receipt lookup (receipts feature): full receipt fields for one payment, readable by
+-- an active admin or the owning member only (email match). Anon gets nothing.
+create or replace view public.receipt_self as
+  select p.receipt_no, p.amount, p.purpose, p.payment_method, p.payment_date, p.notes,
+         m.name as member_name, m.member_id, m.house_name, a.name as recorded_by
+  from public.payments p
+  join public.members m on m.id = p.member_id
+  left join public.admins a on a.id = p.created_by
+  where public.is_active_admin()
+     or (m.email is not null and lower(m.email) = lower(auth.jwt() ->> 'email'));
+grant select on public.receipt_self to authenticated;
+
 -- Fee categories (profession-fee): admins manage; no anon access.
 alter table public.fee_categories enable row level security;
 drop policy if exists fee_categories_admin_all on public.fee_categories;
