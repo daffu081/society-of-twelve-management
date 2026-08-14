@@ -32,6 +32,11 @@ features:
     ac_count: 2
     contract_version: 1
     depends_on: [members, member-profile]
+  profession-fee:
+    status: done
+    ac_count: 3
+    contract_version: 1
+    depends_on: [admin-access]
   payments:
     status: planned
     ac_count: 2
