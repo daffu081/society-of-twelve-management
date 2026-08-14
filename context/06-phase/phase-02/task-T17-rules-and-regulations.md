@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T17
 feature: rules
-status: todo
+status: done
 ---
 
 # T17 — Rules & regulations
@@ -15,8 +15,8 @@ Rules & Regulations section (spec §22): a dedicated area the Super Admin can cr
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC1 | Manage rules | ⬜ |
-| AC2 | Version history | ⬜ |
+| AC1 | Manage rules | ✅ |
+| AC2 | Version history | ✅ |
 
 ## Implementation approach
 1. Add a rules table with publish/archive and version history

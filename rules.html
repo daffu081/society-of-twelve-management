@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Rules &amp; Regulations | Society of Twelve</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .rule { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+    .rule .v { color: #64748b; font-size: 12px; }
+  </style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="logo">SOT</div><div><h1>Rules &amp; Regulations</h1><p>Society of Twelve</p></div></div>
+  <nav><a href="index.html">← Home</a></nav>
+</header>
+<main>
+  <section>
+    <h2>Current rules</h2>
+    <div id="list"><p>Loading…</p></div>
+  </section>
+</main>
+<footer><strong>Society of Twelve</strong><div>© <span id="year"></span> Society of Twelve — All Rights Reserved.</div></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+  const { createClient } = window.supabase;
+  const client = createClient(window.SOT_CONFIG.SUPABASE_URL, window.SOT_CONFIG.SUPABASE_ANON_KEY);
+  const list = document.getElementById("list");
+
+  (async () => {
+    // RLS returns only published rules to the public
+    const { data, error } = await client
+      .from("rules").select("title, body, version, display_order")
+      .order("display_order").order("created_at");
+    if (error) {
+      console.error(error);
+      list.innerHTML = `<p>${error.message || "Could not load the rules."}</p>`;
+      return;
+    }
+    if (!data.length) { list.innerHTML = `<p>No rules published yet.</p>`; return; }
+    list.innerHTML = data.map((r, i) => `
+      <article class="rule">
+        <h3>${i + 1}. ${r.title}</h3>
+        <p>${r.body}</p>
+        <div class="v">Version ${r.version}</div>
+      </article>`).join("");
+  })();
+</script>
+</body>
+</html>
