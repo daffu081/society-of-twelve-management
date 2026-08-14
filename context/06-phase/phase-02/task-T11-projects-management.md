@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T11
 feature: projects
-status: todo
+status: done
 ---
 
 # T11 — Projects management
@@ -15,8 +15,8 @@ Projects management (spec §19): title, description, images, start/end dates, st
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC3 | Manage project with details & finance | ⬜ |
-| AC4 | Soft-delete and restore | ⬜ |
+| AC3 | Manage project with details & finance | ✅ |
+| AC4 | Soft-delete and restore | ✅ |
 
 ## Implementation approach
 1. Add a projects table with soft-delete metadata and financial fields

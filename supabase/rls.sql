@@ -244,6 +244,73 @@ create or replace view public.finance_totals as
   where public.has_permission('finance_read');
 grant select on public.finance_totals to authenticated;
 
+-- Notices (notices feature): public reads published, non-archived notices; admins
+-- need notices_read/notices_write; flipping `published` additionally needs
+-- notices_publish (enforced by trigger — BR5-style server-side gating).
+alter table public.notices enable row level security;
+drop policy if exists notices_public_read on public.notices;
+create policy notices_public_read on public.notices
+  for select using (published = true and coalesce(archived, false) = false);
+drop policy if exists notices_perm_read on public.notices;
+create policy notices_perm_read on public.notices
+  for select using (public.has_permission('notices_read'));
+drop policy if exists notices_perm_insert on public.notices;
+create policy notices_perm_insert on public.notices
+  for insert with check (public.has_permission('notices_write'));
+drop policy if exists notices_perm_update on public.notices;
+create policy notices_perm_update on public.notices
+  for update using (public.has_permission('notices_write'))
+  with check (public.has_permission('notices_write'));
+
+create or replace function public.notices_guard_publish() returns trigger
+  language plpgsql security definer set search_path = public as $$
+begin
+  if new.published is distinct from old.published
+     and not public.has_permission('notices_publish') then
+    raise exception 'Publishing a notice requires the notices_publish permission';
+  end if;
+  if new.published = true and old.published = false then
+    new.published_at := now();
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists notices_guard_publish on public.notices;
+create trigger notices_guard_publish
+  before update on public.notices
+  for each row execute function public.notices_guard_publish();
+
+-- Projects (projects feature): public reads all (running + previous showcase);
+-- writes need projects_write. Soft-delete goes through bin (ADR-003).
+alter table public.projects enable row level security;
+drop policy if exists projects_public_read on public.projects;
+create policy projects_public_read on public.projects
+  for select using (true);
+drop policy if exists projects_perm_insert on public.projects;
+create policy projects_perm_insert on public.projects
+  for insert with check (public.has_permission('projects_write'));
+drop policy if exists projects_perm_update on public.projects;
+create policy projects_perm_update on public.projects
+  for update using (public.has_permission('projects_write'))
+  with check (public.has_permission('projects_write'));
+drop policy if exists projects_perm_delete on public.projects;
+create policy projects_perm_delete on public.projects
+  for delete using (public.has_permission('projects_write'));
+
+-- Bin (ADR-003): area-permitted admins insert snapshots when soft-deleting;
+-- only a Super Admin reads, restores (delete-after-restore) or purges (BR5).
+-- Full bin lifecycle/cleanup is the bin feature (T24).
+alter table public.bin enable row level security;
+drop policy if exists bin_admin_insert on public.bin;
+create policy bin_admin_insert on public.bin
+  for insert with check (public.is_active_admin());
+drop policy if exists bin_super_read on public.bin;
+create policy bin_super_read on public.bin
+  for select using (public.is_super_admin());
+drop policy if exists bin_super_delete on public.bin;
+create policy bin_super_delete on public.bin
+  for delete using (public.is_super_admin());
+
 -- Fee categories (profession-fee): any active admin reads (the member form needs
 -- them); editing fees is a settings capability. No anon access.
 alter table public.fee_categories enable row level security;

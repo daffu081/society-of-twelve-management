@@ -5,12 +5,12 @@ tags: [phase-02, phase-summary]
 status: in_progress
 started_at: 2026-08-14
 ac_total: 54
-ac_green: 23
+ac_green: 28
 ---
 
 # Phase 02 — TBD
 
-> **Status: 🔄 IN PROGRESS — 23 / 54 ACs green**
+> **Status: 🔄 IN PROGRESS — 28 / 54 ACs green**
 
 ## What this phase delivers
 
@@ -34,8 +34,8 @@ site), SMS + birthday automation, and the P4 hardening layer (audit, bin, report
 | T07 | **due-payments** | 2 | ✅ done | Due calculation + editable reminders | AC1–AC2 |
 | T08 | **finance** | 3 | ✅ done | Income/expense + balance, private | AC4–AC6 |
 | T09 | **executive-admins** | 2 | ✅ done | Enforced permission matrix + last-super-admin guard | AC4–AC5 |
-| T10 | **notices** | 3 | ⬜ todo | Notices + meetings + reviewed SMS, ref numbers | AC3–AC5 |
-| T11 | **projects** | 2 | ⬜ todo | Projects with finance + soft-delete | AC3–AC4 |
+| T10 | **notices** | 3 | ✅ done | Notices + meetings + reviewed SMS, ref numbers | AC3–AC5 |
+| T11 | **projects** | 2 | ✅ done | Projects with finance + soft-delete | AC3–AC4 |
 | T12 | **mahfil** | 2 | ⬜ todo | Mahfil management + public page | AC3–AC4 |
 | T13 | **committee** | 2 | ⬜ todo | Executive committee roster + ordered public display | AC1–AC2 |
 | T14 | **founding-members** | 1 | ⬜ todo | Founding-member records shown publicly | AC1 |

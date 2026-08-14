@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notices | Society of Twelve</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f7fa; color: #17202a; }
+    header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 18px 5%; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo { width: 45px; height: 45px; border-radius: 10px; background: #111827; color: #fff; display: grid; place-items: center; font-weight: bold; }
+    main { padding: 35px 5%; max-width: 900px; margin: auto; }
+    .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 25px; margin-bottom: 25px; }
+    label { display: block; margin: 12px 0 6px; font-weight: 600; }
+    input, select, textarea { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 15px; font-family: inherit; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+    button { margin-top: 18px; padding: 12px 18px; border: 0; border-radius: 10px; background: #111827; color: #fff; font-size: 15px; cursor: pointer; }
+    button.secondary { background: #e5e7eb; color: #111827; }
+    button.small { margin: 0; padding: 8px 12px; font-size: 13px; }
+    button:disabled { opacity: .6; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eef1f4; }
+    #message { margin-top: 12px; }
+    a.back { color: #64748b; text-decoration: none; }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">SOT</div>
+    <div><strong>Society of Twelve</strong> — Notices &amp; Meetings</div>
+  </div>
+  <a class="back" href="dashboard.html">&larr; Dashboard</a>
+</header>
+
+<main>
+
+  <div class="panel">
+    <h2 id="formTitle">Create a notice</h2>
+    <form id="noticeForm">
+      <input id="id" type="hidden">
+      <div class="grid">
+        <div>
+          <label for="notice_type">Type</label>
+          <select id="notice_type">
+            <option value="general">General notice</option>
+            <option value="meeting">Meeting notice</option>
+          </select>
+        </div>
+        <div>
+          <label for="title">Title *</label>
+          <input id="title" type="text" required>
+        </div>
+      </div>
+      <div class="grid" id="meetingFields" hidden>
+        <div>
+          <label for="meeting_date">Meeting date *</label>
+          <input id="meeting_date" type="date">
+        </div>
+        <div>
+          <label for="meeting_time">Meeting time *</label>
+          <input id="meeting_time" type="time">
+        </div>
+        <div style="grid-column:1/-1">
+          <label for="meeting_venue">Venue *</label>
+          <input id="meeting_venue" type="text">
+        </div>
+      </div>
+      <label for="body">Body *</label>
+      <textarea id="body" rows="4" required></textarea>
+      <label style="display:flex;align-items:center;gap:8px;font-weight:400">
+        <input id="running" type="checkbox" style="width:auto"> Running notice (highlight on homepage)
+      </label>
+      <button id="saveButton" type="submit">Save notice</button>
+      <button id="cancelButton" type="button" class="secondary" style="display:none">Cancel edit</button>
+    </form>
+    <div id="message"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Notices</h2>
+    <table>
+      <thead><tr><th>Ref</th><th>Title</th><th>Type</th><th>Status</th><th></th></tr></thead>
+      <tbody id="noticeRows"><tr><td colspan="5">Loading...</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="panel" id="smsPanel" hidden>
+    <h3>Notice SMS — <span id="smsRef"></span></h3>
+    <p style="color:#64748b;font-size:14px">Review and edit before sending. Goes to every active member.</p>
+    <textarea id="smsText" rows="3"></textarea>
+    <button id="sendSms">Send SMS to all active members</button>
+    <button id="cancelSms" type="button" class="secondary">Cancel</button>
+    <div id="smsMessage" style="margin-top:8px"></div>
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../config.js"></script>
+<script src="admin.js"></script>
+
+<script>
+(async () => {
+  const result = await checkAdminAccess();
+  if (!result) return;
+  const { admin } = result;
+  const can = (cap) => admin.role === "super_admin" || admin.permissions?.[cap] === true;
+
+  const rows = document.getElementById("noticeRows");
+  const message = document.getElementById("message");
+  const form = document.getElementById("noticeForm");
+  const cancelButton = document.getElementById("cancelButton");
+  const typeSelect = document.getElementById("notice_type");
+  const meetingFields = document.getElementById("meetingFields");
+  const smsPanel = document.getElementById("smsPanel");
+  const smsMessage = document.getElementById("smsMessage");
+  let notices = [];
+  let smsNotice = null;
+
+  function say(ok, text) {
+    message.style.color = ok ? "#16a34a" : "#dc2626";
+    message.textContent = text;
+  }
+
+  typeSelect.addEventListener("change", () => {
+    meetingFields.hidden = typeSelect.value !== "meeting";
+  });
+
+  function resetForm() {
+    form.reset();
+    document.getElementById("id").value = "";
+    document.getElementById("formTitle").textContent = "Create a notice";
+    meetingFields.hidden = true;
+    cancelButton.style.display = "none";
+  }
+  cancelButton.addEventListener("click", resetForm);
+
+  async function loadNotices() {
+    const { data, error } = await supabaseClient
+      .from("notices").select("*").order("created_at", { ascending: false });
+    if (error) {
+      console.error(error);
+      rows.innerHTML = `<tr><td colspan="5">${error.message || "Could not load notices."}</td></tr>`;
+      return;
+    }
+    notices = data;
+    rows.innerHTML = data.length
+      ? data.map(n => {
+          const status = n.archived ? "Archived" : n.published ? (n.running ? "Published · Running" : "Published") : "Draft";
+          return `<tr data-id="${n.id}">
+            <td>${n.ref_no}</td><td>${n.title}</td><td>${n.notice_type === "meeting" ? "Meeting" : "General"}</td><td>${status}</td>
+            <td style="white-space:nowrap">
+              <button type="button" class="small" data-act="edit">Edit</button>
+              ${n.archived ? "" : n.published
+                ? `<button type="button" class="small" data-act="unpublish">Unpublish</button>`
+                : `<button type="button" class="small" data-act="publish">Publish</button>`}
+              ${n.archived ? "" : `<button type="button" class="small secondary" data-act="archive">Archive</button>`}
+              ${can("sms_send") && n.published && !n.archived ? `<button type="button" class="small" data-act="sms">SMS</button>` : ""}
+            </td></tr>`;
+        }).join("")
+      : `<tr><td colspan="5">No notices yet.</td></tr>`;
+  }
+
+  rows.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-act]");
+    if (!btn) return;
+    const n = notices.find(x => x.id === btn.closest("tr").dataset.id);
+    if (!n) return;
+
+    if (btn.dataset.act === "edit") {
+      document.getElementById("id").value = n.id;
+      document.getElementById("formTitle").textContent = "Edit " + n.ref_no;
+      typeSelect.value = n.notice_type || "general";
+      meetingFields.hidden = typeSelect.value !== "meeting";
+      document.getElementById("title").value = n.title;
+      document.getElementById("body").value = n.body;
+      document.getElementById("meeting_date").value = n.meeting_date || "";
+      document.getElementById("meeting_time").value = n.meeting_time || "";
+      document.getElementById("meeting_venue").value = n.meeting_venue || "";
+      document.getElementById("running").checked = !!n.running;
+      cancelButton.style.display = "inline-block";
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    if (btn.dataset.act === "sms") {
+      smsNotice = n;
+      document.getElementById("smsRef").textContent = n.ref_no;
+      // editable before sending (BR5)
+      document.getElementById("smsText").value =
+        n.notice_type === "meeting"
+          ? `Society of Twelve: ${n.title} — ${n.meeting_date || ""} ${n.meeting_time || ""}, ${n.meeting_venue || ""}. Ref ${n.ref_no}.`
+          : `Society of Twelve: ${n.title}. Ref ${n.ref_no}.`;
+      smsMessage.textContent = "";
+      smsPanel.hidden = false;
+      smsPanel.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+
+    btn.disabled = true;
+    const patch = btn.dataset.act === "publish" ? { published: true }
+      : btn.dataset.act === "unpublish" ? { published: false }
+      : { archived: true, running: false };
+    const { error } = await supabaseClient.from("notices").update(patch).eq("id", n.id);
+    if (error) { console.error(error); say(false, error.message || "Update failed."); }
+    else { say(true, `${n.ref_no} ${btn.dataset.act}ed.`); await loadNotices(); }
+    btn.disabled = false;
+  });
+
+  document.getElementById("cancelSms").addEventListener("click", () => { smsPanel.hidden = true; });
+
+  document.getElementById("sendSms").addEventListener("click", async (e) => {
+    if (!smsNotice) return;
+    e.target.disabled = true;
+    smsMessage.style.color = "#dc2626";
+    smsMessage.textContent = "";
+    const text = document.getElementById("smsText").value.trim();
+    const { data: members, error: mErr } = await supabaseClient
+      .from("members").select("id").eq("active", true);
+    if (mErr || !members?.length) {
+      smsMessage.textContent = mErr?.message || "No active members to send to.";
+      e.target.disabled = false;
+      return;
+    }
+    // queue one pending row per member; the sms feature (T19) delivers
+    const { error } = await supabaseClient.from("sms_logs").insert(
+      members.map(m => ({
+        member_id: m.id, template_key: "notice", message_body: text,
+        status: "pending", sent_by: admin.id,
+      }))
+    );
+    if (error) { console.error(error); smsMessage.textContent = error.message || "Could not queue the SMS."; }
+    else {
+      smsMessage.style.color = "#16a34a";
+      smsMessage.textContent = `Queued for ${members.length} member(s).`;
+      smsPanel.hidden = true;
+    }
+    e.target.disabled = false;
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const isMeeting = typeSelect.value === "meeting";
+    if (isMeeting && !(document.getElementById("meeting_date").value
+        && document.getElementById("meeting_time").value
+        && document.getElementById("meeting_venue").value.trim())) {
+      say(false, "A meeting notice needs date, time and venue.");
+      return;
+    }
+    const record = {
+      notice_type: typeSelect.value,
+      title: document.getElementById("title").value.trim(),
+      body: document.getElementById("body").value.trim(),
+      running: document.getElementById("running").checked,
+      meeting_date: isMeeting ? document.getElementById("meeting_date").value : null,
+      meeting_time: isMeeting ? document.getElementById("meeting_time").value : null,
+      meeting_venue: isMeeting ? document.getElementById("meeting_venue").value.trim() : null,
+    };
+    const editingId = document.getElementById("id").value;
+    // ref_no is assigned server-side by next_notice_ref_no()
+    const { error } = editingId
+      ? await supabaseClient.from("notices").update(record).eq("id", editingId)
+      : await supabaseClient.from("notices").insert(record);
+    if (error) { console.error(error); say(false, error.message || "Could not save the notice."); }
+    else { say(true, editingId ? "Notice updated." : "Notice saved as draft — publish it from the list."); resetForm(); await loadNotices(); }
+  });
+
+  await loadNotices();
+})();
+</script>
+
+</body>
+</html>

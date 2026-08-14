@@ -43,6 +43,30 @@ begin
 end;
 $$;
 alter table public.payments alter column receipt_no set default public.next_receipt_no();
+-- notices (T10): meeting fields + archive state + SOT-NOT-YYYYMM-0001 reference numbers
+alter table public.notices add column if not exists notice_type text default 'general';
+alter table public.notices add column if not exists meeting_date date;
+alter table public.notices add column if not exists meeting_time time;
+alter table public.notices add column if not exists meeting_venue text;
+alter table public.notices add column if not exists archived boolean default false;
+create table if not exists public.notice_counters (month text primary key, counter integer not null);
+create or replace function public.next_notice_ref_no() returns text
+  language plpgsql volatile security definer set search_path = public as $$
+declare m text := to_char(now(), 'YYYYMM'); n integer;
+begin
+  insert into notice_counters (month, counter) values (m, 1)
+  on conflict (month) do update set counter = notice_counters.counter + 1
+  returning counter into n;
+  return 'SOT-NOT-' || m || '-' || lpad(n::text, 4, '0');
+end;
+$$;
+alter table public.notices alter column ref_no set default public.next_notice_ref_no();
+-- projects (T11): full detail + finance fields; images are URLs until the storage split (T25)
+alter table public.projects add column if not exists image_urls text[];
+alter table public.projects add column if not exists start_date date;
+alter table public.projects add column if not exists end_date date;
+alter table public.projects add column if not exists budget numeric(12,2);
+alter table public.projects add column if not exists amount_spent numeric(12,2);
 create table if not exists public.payments (
  id uuid primary key default gen_random_uuid(), receipt_no text unique not null, member_id uuid references public.members(id),
  amount numeric(12,2) not null, purpose text not null, payment_method text not null, payment_date timestamptz default now(), notes text, created_by uuid, created_at timestamptz default now()

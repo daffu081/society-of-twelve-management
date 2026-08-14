@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T10
 feature: notices
-status: todo
+status: done
 ---
 
 # T10 — Notices & meetings
@@ -15,9 +15,9 @@ Notices & meetings management (spec §18): create, edit, publish and archive not
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC3 | Create & publish with reference number | ⬜ |
-| AC4 | Meeting notice fields | ⬜ |
-| AC5 | Send notice SMS after review | ⬜ |
+| AC3 | Create & publish with reference number | ✅ |
+| AC4 | Meeting notice fields | ✅ |
+| AC5 | Send notice SMS after review | ✅ |
 
 ## Implementation approach
 1. Add a notices table with reference-number generation and publish/archive states
