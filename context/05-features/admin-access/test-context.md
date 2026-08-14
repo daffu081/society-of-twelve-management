@@ -4,7 +4,7 @@ spec_version: 1
 feature: admin-access
 file_type: test-context
 contract_version: 1
-status: in_progress
+status: done
 depends_on: []
 last_review: 2026-08-13
 frozen: false
