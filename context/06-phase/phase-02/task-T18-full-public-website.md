@@ -4,7 +4,7 @@ file_type: task
 phase: 2
 task_id: T18
 feature: public-site
-status: todo
+status: done
 ---
 
 # T18 — Full public website
@@ -15,7 +15,7 @@ Expand the public website from the Phase-01 homepage to the full page set (spec 
 ## Delivers these ACs
 | AC | Title | Done? |
 |----|-------|-------|
-| AC4 | Full public page set | ⬜ |
+| AC4 | Full public page set | ✅ |
 
 ## Implementation approach
 1. Build the About Us and Area History static pages
