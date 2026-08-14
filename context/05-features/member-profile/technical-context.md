@@ -4,7 +4,7 @@ spec_version: 1
 feature: member-profile
 file_type: technical-context
 contract_version: 2
-status: in_progress
+status: done
 depends_on: [admin-access]
 last_review: 2026-08-14
 frozen: false
