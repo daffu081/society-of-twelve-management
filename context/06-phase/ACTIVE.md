@@ -12,7 +12,7 @@ last_review: 2026-08-15
 
 | Active phase | Folder | Started |
 |---|---|---|
-| _none_ | — | — |
+| **phase-03** | `context/06-phase/phase-03/` | 2026-08-15 |
 
 ## The rule for agents
 1. Read this file to learn the active phase.
