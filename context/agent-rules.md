@@ -89,6 +89,9 @@ Read `/context/02-shared/git-conventions.md` before any git operation. Non-negot
 - **🔴 No automatic PRs** — show the PR preview, ask before `gh pr create`.
 - **🔴 No automatic merges** — never merge without explicit approval.
 - **Never add AI attribution** — no `Co-Authored-By: Claude` trailer and no "Generated with Claude Code" line in any commit message or PR body.
+- **Never leave work uncommitted** — end every task with a clean working tree. Commit finished
+  changes on a feature branch (through the approval gate above) or discard them; never leave dangling
+  edits behind for the next session to trip over.
 
 These confirmation gates override everything, including earlier "implement X and commit"
 instructions. Approval is per-action: commit approval is NOT push/PR/merge approval.

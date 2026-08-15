@@ -6,7 +6,7 @@ file_type: test-context
 contract_version: 1
 status: done
 depends_on: [admin-access]
-last_review: 2026-08-14
+last_review: 2026-08-15
 frozen: false
 tags: [member-profile, test-context]
 ---
