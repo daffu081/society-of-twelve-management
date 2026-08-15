@@ -6,7 +6,7 @@ file_type: technical-context
 contract_version: 1
 status: done
 depends_on: []
-last_review: 2026-08-13
+last_review: 2026-08-15
 frozen: false
 tags: [admin-access, technical-context]
 ---
