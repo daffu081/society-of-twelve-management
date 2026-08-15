@@ -1,7 +1,7 @@
 ---
 type: active-phase-pointer
 title: "Active Phase"
-last_review: 2026-08-13
+last_review: 2026-08-15
 ---
 
 # Active phase

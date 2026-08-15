@@ -5,7 +5,7 @@ title: "Agent Rules"
 tags: [rules, agent, guardrails]
 file_type: spec
 frozen: false
-last_review: 2026-08-13
+last_review: 2026-08-15
 ---
 
 # Agent rules
