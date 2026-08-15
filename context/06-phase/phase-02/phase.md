@@ -2,15 +2,20 @@
 title: "Phase 02 — TBD"
 type: phase-summary
 tags: [phase-02, phase-summary]
-status: in_progress
-started_at: 2026-08-14
+status: locked
+locked_at: 2026-08-15
 ac_total: 54
 ac_green: 54
 ---
 
+> [!NOTE]
+> **This phase is locked.** It was sealed on 2026-08-15 and serves as a read-only historical record.
+> To continue work, see the next phase or run ``ls context/06-phase/``.
+
 # Phase 02 — TBD
 
-> **Status: ✅ COMPLETE — 54 / 54 ACs green**
+> 🔒 **LOCKED — sealed on 2026-08-15**
+> This phase is a permanent historical record. No further changes are allowed.
 
 ## What this phase delivers
 
@@ -62,3 +67,4 @@ _Filled in as tasks complete. Never edit existing entries._
 | Date | Task | ACs | Notes |
 |------|------|-----|-------|
 | — | — | — | Phase 02 not yet started |
+| 2026-08-15 | 🔒 Phase locked | — | Sealed by /phase-finish. No further changes allowed. |

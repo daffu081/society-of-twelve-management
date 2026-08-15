@@ -1,7 +1,7 @@
 # Machine-readable phase registry — mirrors 05-features/INDEX.yml.
 # One phase is active at a time. `active` names it (ACTIVE.md is the human-readable pointer).
 # status: not_started | in_progress | locked
-active: phase-02
+active: null
 phases:
   phase-01:
     title: "Phase 01 — Foundation (example)"
@@ -10,7 +10,7 @@ phases:
     ac_green: 10
   phase-02:
     title: "Phase 02 — TBD"
-    status: in_progress
+    status: locked
     ac_total: 54
     ac_green: 54
 # - one block per phase; /create-phase appends, /phase-finish sets status: locked -
